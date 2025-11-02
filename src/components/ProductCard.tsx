@@ -1,7 +1,7 @@
 import { Star, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { formatCurrency } from "@/utils/cart";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 
@@ -29,6 +29,7 @@ const ProductCard = ({
   inStock = true,
 }: ProductCardProps) => {
   const { addToCart } = useCart();
+  const { formatCurrency } = useCurrency();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -116,8 +117,12 @@ const ProductCard = ({
         <Button
           onClick={handleAddToCart}
           disabled={!inStock}
-          className="w-full gap-1 md:gap-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-semibold shadow-md hover:shadow-lg transition-all h-8 md:h-10 lg:h-11"
-          variant={inStock ? "default" : "secondary"}
+          className={`w-full gap-1 md:gap-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-semibold shadow-md hover:shadow-lg transition-colors h-8 md:h-10 lg:h-11 ${
+            inStock
+              ? "border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground"
+              : ""
+          }`}
+          variant={inStock ? "outline" : "secondary"}
         >
           <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
           {inStock ? "Add to Cart" : "Out of Stock"}

@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
-import { formatCurrency } from "@/utils/cart";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const { formatCurrency } = useCurrency();
 
   if (cart.length === 0) {
     return (

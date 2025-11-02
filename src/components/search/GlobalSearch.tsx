@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useWooCommerceProducts } from "@/hooks/useWooCommerceProducts";
 import { useWooCommerceCategories } from "@/hooks/useWooCommerceCategories";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent } from "@/components/ui/popover";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search as SearchIcon } from "lucide-react";
 import SearchResultItem from "@/components/search/SearchResultItem";
-import { cn } from "@/lib/utils";
 
 type ProductLite = {
   id: string;
@@ -30,7 +30,6 @@ type CategoryLite = {
 type GlobalSearchProps = {
   className?: string;
   placeholder?: string;
-  inputClassName?: string;
 };
 
 function useDebounced<T>(value: T, delay = 200) {
@@ -45,7 +44,6 @@ function useDebounced<T>(value: T, delay = 200) {
 export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   className,
   placeholder = "Search products…",
-  inputClassName,
 }) => {
   const [open, setOpen] = React.useState(false);
   const [q, setQ] = React.useState("");
@@ -164,15 +162,25 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     fetchingCategories;
   const showEmpty = enableSearch && !loading && rows.length === 0;
 
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (nextOpen && !enableSearch) {
+        return;
+      }
+      setOpen(nextOpen);
+    },
+    [enableSearch]
+  );
+
   return (
     <div className={`relative ${className ?? ""}`}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverPrimitive.Anchor asChild>
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               ref={inputRef}
-              className={cn("pl-9 h-11", inputClassName)}
+              className="pl-9 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={placeholder}
@@ -201,7 +209,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               }}
             />
           </div>
-        </PopoverTrigger>
+        </PopoverPrimitive.Anchor>
         <PopoverContent
           side="bottom"
           align="start"
@@ -248,7 +256,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                               navigate(`/product/${p.slug}`);
                               setOpen(false);
                             }}
-                            className="px-2"
+                            className="w-full px-2 data-[selected=true]:bg-transparent data-[selected=true]:text-foreground"
                           >
                             <SearchResultItem
                               active={active}
@@ -286,7 +294,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                               navigate(`/category/${c.slug}`);
                               setOpen(false);
                             }}
-                            className="px-2"
+                            className="w-full px-2 data-[selected=true]:bg-transparent data-[selected=true]:text-foreground"
                           >
                             <SearchResultItem
                               active={active}

@@ -4,13 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatCurrency } from "@/utils/cart";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const Checkout = () => {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -103,8 +104,9 @@ const Checkout = () => {
       toast.success(`Order #${result.orderNumber} placed successfully!`);
       clearCart();
       navigate("/thank-you");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to place order");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to place order";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Trash2, Plus, Minus, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
-import { formatCurrency } from "@/utils/cart";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import {
   Sheet,
   SheetContent,
@@ -18,6 +18,7 @@ interface CartDrawerProps {
 
 const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
   const { cart, removeFromCart, updateQuantity, cartTotal, cartItemCount } = useCart();
+  const { formatCurrency } = useCurrency();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Star, ShoppingCart, Heart, Share2, Minus, Plus, ChevronRight } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/utils/cart";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { useWooCommerceProducts } from "@/hooks/useWooCommerceProducts";
@@ -21,6 +21,7 @@ const ProductDetail = () => {
   const { data: productResult, isLoading: productsLoading } = useWooCommerceProducts({ slug });
   const { data: allProducts } = useWooCommerceProducts();
   const { data: categories } = useWooCommerceCategories();
+  const { formatCurrency } = useCurrency();
 
   const product = productResult?.[0];
   const [quantity, setQuantity] = useState(1);

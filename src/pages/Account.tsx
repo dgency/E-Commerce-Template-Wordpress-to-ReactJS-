@@ -11,12 +11,35 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWooCommerceOrders } from "@/hooks/useWooCommerceOrders";
-import { formatCurrency } from "@/utils/cart";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const Account = () => {
   const navigate = useNavigate();
   const { user, logout, loading: authLoading } = useAuth();
   const { data: orders, isLoading: ordersLoading } = useWooCommerceOrders();
+  const { formatCurrency } = useCurrency();
+  const [addresses] = useState([
+    {
+      id: 1,
+      type: "Home",
+      name: "John Doe",
+      street: "123 Main Street",
+      city: "New York",
+      state: "NY",
+      zip: "10001",
+      isDefault: true,
+    },
+    {
+      id: 2,
+      type: "Office",
+      name: "John Doe",
+      street: "456 Business Ave",
+      city: "New York",
+      state: "NY",
+      zip: "10002",
+      isDefault: false,
+    },
+  ]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -35,29 +58,6 @@ const Account = () => {
       </div>
     );
   }
-
-  const [addresses] = useState([
-    {
-      id: 1,
-      type: "Home",
-      name: "John Doe",
-      street: "123 Main Street",
-      city: "New York",
-      state: "NY",
-      zip: "10001",
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: "Office",
-      name: "John Doe",
-      street: "456 Business Ave",
-      city: "New York",
-      state: "NY",
-      zip: "10002",
-      isDefault: false
-    }
-  ]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

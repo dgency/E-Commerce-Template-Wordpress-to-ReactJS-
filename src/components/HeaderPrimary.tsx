@@ -9,14 +9,14 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import CartDrawer from "./CartDrawer";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
-import GlobalSearch from "@/components/search/GlobalSearch"; // ✅ Import Live Search
+import { GlobalSearch } from "@/components/search/GlobalSearch"; // 👈 use the modern search
 
 const HeaderPrimary = () => {
   const { cartItemCount } = useCart();
   const { user, logout } = useAuth();
   const { isOpen, setIsOpen } = useCartDrawer();
 
-  // Responsive sticky navbar
+  // Responsive sticky navbar: sticky for desktop/tablet, hide on scroll down for mobile
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const scrollDirection = useScrollDirection();
 
@@ -32,30 +32,29 @@ const HeaderPrimary = () => {
         ${isMobile ? "fixed top-0" : "lg:sticky lg:top-0 lg:z-50 lg:h-16"}
         ${isMobile ? (scrollDirection === "down" ? "-translate-y-full" : "translate-y-0") : "translate-y-0"}`}
     >
-      <div className="container mx-auto px-4 py-3 relative z-[60]">
-        <div className="flex items-center justify-between gap-4 min-h-[64px]">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center h-11 hover:opacity-80 transition-opacity">
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <h1 className="text-2xl font-bold font-heading text-gradient">
               {themeConfig.brandName}
             </h1>
           </Link>
 
-          {/* ✅ Desktop Search Bar (Live Search) */}
+          {/* Search (desktop) */}
           <div className="flex-1 max-w-2xl hidden md:block">
             <GlobalSearch
               className="w-full"
-              inputClassName="h-11"
               placeholder="Search products, categories..."
             />
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-4">
             {/* Contact Phone */}
             <a
               href={`tel:${themeConfig.contactPhone}`}
-              className="hidden lg:flex items-center gap-2 text-sm hover:text-accent transition-colors h-11 px-3 rounded-lg"
+              className="hidden lg:flex items-center gap-2 text-sm hover:text-accent transition-colors"
             >
               <Phone className="h-4 w-4" />
               <span className="font-medium">{themeConfig.contactPhone}</span>
@@ -65,20 +64,16 @@ const HeaderPrimary = () => {
             {user ? (
               <div className="flex items-center gap-2">
                 <Link to="/account">
-                  <Button
-                    variant="ghost"
-                    size="default"
-                    className="gap-2 h-11 px-4"
-                  >
+                  <Button variant="ghost" size="sm" className="gap-2">
                     <User className="h-5 w-5" />
                     <span className="hidden md:inline">{user.displayName}</span>
                   </Button>
                 </Link>
                 <Button
                   variant="ghost"
+                  size="sm"
                   onClick={logout}
-                  size="default"
-                  className="gap-2 h-11 px-4"
+                  className="gap-2"
                 >
                   <LogOut className="h-5 w-5" />
                   <span className="hidden md:inline">Logout</span>
@@ -86,11 +81,7 @@ const HeaderPrimary = () => {
               </div>
             ) : (
               <Link to="/auth/login">
-                <Button
-                  variant="ghost"
-                  size="default"
-                  className="gap-2 h-11 px-4"
-                >
+                <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline">Login</span>
                 </Button>
@@ -100,8 +91,8 @@ const HeaderPrimary = () => {
             {/* Cart */}
             <Button
               variant="ghost"
-              size="default"
-              className="gap-2 relative h-11 px-4"
+              size="sm"
+              className="gap-2 relative"
               onClick={() => setIsOpen(true)}
             >
               <ShoppingCart className="h-5 w-5" />
@@ -115,17 +106,16 @@ const HeaderPrimary = () => {
           </div>
         </div>
 
-        {/* ✅ Mobile Search (Full Width) */}
+        {/* Search (mobile) */}
         <div className="mt-4 md:hidden">
           <GlobalSearch
             className="w-full"
-            inputClassName="h-11"
-            placeholder="Search products..."
+            placeholder="Search products, categories..."
           />
         </div>
       </div>
 
-      {/* ✅ Cart Drawer controlled via context */}
+      {/* Single shared cart drawer */}
       <CartDrawer open={isOpen} onOpenChange={setIsOpen} />
     </div>
   );

@@ -79,7 +79,3 @@ export const getCartTotal = (cart: CartItem[]): number => {
 export const getCartItemCount = (cart: CartItem[]): number => {
   return cart.reduce((count, item) => count + item.quantity, 0);
 };
-
-export const formatCurrency = (amount: number): string => {
-  return `$${amount.toFixed(2)}`;
-};
