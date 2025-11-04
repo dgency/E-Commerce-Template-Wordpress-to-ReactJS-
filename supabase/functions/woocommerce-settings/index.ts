@@ -128,13 +128,21 @@ serve(async (req: Request) => {
 
     try {
       const currencyResponse = await fetch(
-  `${siteUrl}/wp-json/wc/v3/data/currencies/${currencyCode.toLowerCase()}?context=edit&${authParams}`,
+        `${siteUrl}/wp-json/wc/v3/data/currencies/${currencyCode.toLowerCase()}?context=edit&${authParams}`,
       );
 
       if (currencyResponse.ok) {
         const data = (await currencyResponse.json()) as CurrencyResponse;
         if (typeof data?.symbol === "string" && data.symbol.trim().length > 0) {
-          currencySymbol = data.symbol.trim();
+          // Decode HTML entities (e.g., &#2547; → ৳)
+          const txt = typeof window !== "undefined" ? window.document.createElement("textarea") : undefined;
+          if (txt) {
+            txt.innerHTML = data.symbol.trim();
+            currencySymbol = txt.value;
+          } else {
+            // Node/Edge: decode numeric entities manually
+            currencySymbol = data.symbol.trim().replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code)).replace(/&nbsp;/g, " ");
+          }
         }
       } else {
         console.warn(`Currency symbol fetch failed: ${currencyResponse.status} ${currencyResponse.statusText}`);

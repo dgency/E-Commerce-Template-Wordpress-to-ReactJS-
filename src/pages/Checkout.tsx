@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/hooks/useCart";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -44,24 +44,16 @@ const Checkout = () => {
     const orderData = {
       customer_id: user?.id || 0,
       billing: {
-        first_name: formData.get('firstName'),
-        last_name: formData.get('lastName'),
+        first_name: formData.get('name'),
         email: formData.get('email'),
         phone: formData.get('phone'),
-        address_1: formData.get('address'),
-        city: formData.get('city'),
-        state: formData.get('state'),
-        postcode: formData.get('zip'),
-        country: formData.get('country'),
+        address_1: formData.get('fullAddress'),
+        note: formData.get('note'),
       },
       shipping: {
-        first_name: formData.get('firstName'),
-        last_name: formData.get('lastName'),
-        address_1: formData.get('address'),
-        city: formData.get('city'),
-        state: formData.get('state'),
-        postcode: formData.get('zip'),
-        country: formData.get('country'),
+        first_name: formData.get('name'),
+        address_1: formData.get('fullAddress'),
+        note: formData.get('note'),
       },
       line_items: cart.map(item => {
         // Remove 'p' prefix if exists (from old static data)
@@ -127,62 +119,40 @@ const Checkout = () => {
                   Contact Information
                 </h2>
                 <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input id="firstName" name="firstName" required />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input id="lastName" name="lastName" required />
-                    </div>
+                  <div>
+                    <Label htmlFor="name">Name *</Label>
+                    <Input id="name" name="name" required />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email *</Label>
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      defaultValue={user?.email || ''}
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone *</Label>
+                    <Label htmlFor="phone">Phone Number *</Label>
                     <Input id="phone" name="phone" type="tel" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email (optional)</Label>
+                    <Input id="email" name="email" type="email" defaultValue={user?.email || ''} />
                   </div>
                 </div>
               </div>
 
-              {/* Shipping Address */}
+              {/* Address & Note */}
               <div className="bg-card rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-bold font-heading mb-4">
-                  Shipping Address
+                  Address
                 </h2>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="address">Street Address *</Label>
-                    <Input id="address" name="address" required />
+                    <Label htmlFor="fullAddress">Full Address *</Label>
+                    <textarea
+                      id="fullAddress"
+                      name="fullAddress"
+                      required
+                      rows={3}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="city">City *</Label>
-                      <Input id="city" name="city" required />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State/Province *</Label>
-                      <Input id="state" name="state" required />
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="zip">ZIP/Postal Code *</Label>
-                      <Input id="zip" name="zip" required />
-                    </div>
-                    <div>
-                      <Label htmlFor="country">Country *</Label>
-                      <Input id="country" name="country" required />
-                    </div>
+                  <div>
+                    <Label htmlFor="note">Note (optional)</Label>
+                    <Input id="note" name="note" />
                   </div>
                 </div>
               </div>

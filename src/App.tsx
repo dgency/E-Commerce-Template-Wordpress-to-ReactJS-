@@ -18,6 +18,7 @@ import Contact from "./pages/Contact";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
+import TrackOrder from "./pages/TrackOrder";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/auth/login" element={<Auth />} />
               <Route path="/auth/signup" element={<Auth />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/track-order" element={<TrackOrder />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

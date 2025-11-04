@@ -3,9 +3,11 @@ import { Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react";
 import { themeConfig } from "@/config/theme.config";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useWordPressSiteAssets } from "@/hooks/useWordPressSiteAssets";
 import categories from "@/data/categories.json";
 
 const Footer = () => {
+  const { data: assets } = useWordPressSiteAssets();
   return (
     <footer className="bg-secondary text-secondary-foreground mt-16">
       {/* Newsletter Section */}
@@ -40,9 +42,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* About */}
           <div>
-            <h4 className="text-xl font-bold font-heading mb-4">
-              {themeConfig.brandName}
-            </h4>
+            {assets?.logoUrl ? (
+              <img src={assets.logoUrl} alt={themeConfig.brandName} className="h-8 w-auto mb-4" />
+            ) : (
+              <h4 className="text-xl font-bold font-heading mb-4">
+                {themeConfig.brandName}
+              </h4>
+            )}
             <p className="text-sm text-muted-foreground mb-4">
               {themeConfig.brandTagline}
             </p>
@@ -65,6 +71,11 @@ const Footer = () => {
               <li>
                 <Link to="/shop" className="hover:text-accent transition-colors">
                   Shop
+                </Link>
+              </li>
+              <li>
+                <Link to="/track-order" className="hover:text-accent transition-colors">
+                  Track Order
                 </Link>
               </li>
               <li>

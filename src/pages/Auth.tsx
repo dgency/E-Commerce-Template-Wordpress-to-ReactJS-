@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -36,8 +36,9 @@ const Auth = () => {
       toast.success("Password reset link sent to your email!");
       setIsForgotPassword(false);
       setEmail("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send reset link");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to send reset link";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -63,8 +64,9 @@ const Auth = () => {
         toast.success("Account created successfully!");
         navigate('/account');
       }
-    } catch (error: any) {
-      toast.error(error.message || `${isLogin ? 'Login' : 'Signup'} failed`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `${isLogin ? 'Login' : 'Signup'} failed`;
+      toast.error(message);
     } finally {
       setLoading(false);
     }

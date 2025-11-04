@@ -1,5 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
+
+interface WooCommerceAddress {
+  first_name?: string;
+  last_name?: string;
+  address_1?: string;
+  address_2?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+}
 
 interface WooCommerceOrder {
   id: string;
@@ -16,8 +29,8 @@ interface WooCommerceOrder {
     total: number;
     image: string;
   }>;
-  billing: any;
-  shipping: any;
+  billing: WooCommerceAddress;
+  shipping: WooCommerceAddress;
   paymentMethod: string;
 }
 

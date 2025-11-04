@@ -6,6 +6,7 @@ import WhatsAppFAB from "./WhatsAppFAB";
 import BottomNav from "./BottomNav";
 import FloatingCart from "./FloatingCart";
 import { CartDrawerProvider } from "@/contexts/CartDrawerContext";
+import FaviconSetter from "./FaviconSetter";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <CartDrawerProvider>
       <div className="min-h-screen flex flex-col">
+        <FaviconSetter />
         <NoticeBar />
         <HeaderPrimary />
   <HeaderSecondary />

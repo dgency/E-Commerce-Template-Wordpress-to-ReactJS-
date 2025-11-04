@@ -1,99 +1,94 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useWooCommerceCurrency, type WooCommerceCurrencySettings } from "@/hooks/useWooCommerceCurrency";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { useWooCommerceCurrency, type WooCommerceCurrency, type CurrencyPosition } from "@/hooks/useWooCommerceCurrency";
+import { setCurrencyFormatter } from "@/utils/currency";
 
 type CurrencyContextValue = {
-  settings: WooCommerceCurrencySettings;
+  code: string;
+  symbol: string;
+  position: CurrencyPosition;
+  decimals: number;
+  format: (amount: number) => string;
   formatCurrency: (amount: number) => string;
-  isLoading: boolean;
+  loading: boolean;
   error?: string;
 };
 
-const defaultSettings: WooCommerceCurrencySettings = {
-  currencyCode: "USD",
-  currencySymbol: "$",
-  currencyPosition: "left",
-  thousandSeparator: ",",
-  decimalSeparator: ".",
+const FALLBACK_CURRENCY: WooCommerceCurrency = {
+  code: "USD",
+  symbol: "$",
+  position: "left",
   decimals: 2,
 };
 
-type FormatSettings = Pick<
-  WooCommerceCurrencySettings,
-  "currencySymbol" | "currencyPosition" | "thousandSeparator" | "decimalSeparator" | "decimals"
-> & { currencyCode: string };
+const createFormatter = ({ symbol, position, decimals, code }: WooCommerceCurrency) => {
+  const numberFormatter = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  const resolvedSymbol = symbol || code;
 
-const formatAmount = (amount: number, settings: FormatSettings): string => {
-  const {
-    currencySymbol,
-    currencyPosition,
-    thousandSeparator,
-    decimalSeparator,
-    decimals,
-    currencyCode,
-  } = settings;
+  return (amount: number) => {
+    const isNegative = amount < 0;
+    const absolute = Number.isFinite(amount) ? Math.abs(amount) : 0;
+    const numeric = numberFormatter.format(absolute);
 
-  const precision = Number.isFinite(decimals) ? Math.max(0, decimals) : 2;
-  const absoluteAmount = Math.abs(amount);
-  const fixed = absoluteAmount.toFixed(precision);
-  const [rawIntegers, rawDecimals = ""] = fixed.split(".");
+    let formatted: string;
+    switch (position) {
+      case "left_space":
+        formatted = `${resolvedSymbol} ${numeric}`;
+        break;
+      case "right":
+        formatted = `${numeric}${resolvedSymbol}`;
+        break;
+      case "right_space":
+        formatted = `${numeric} ${resolvedSymbol}`;
+        break;
+      case "left":
+      default:
+        formatted = `${resolvedSymbol}${numeric}`;
+        break;
+    }
 
-  const integerWithSeparator = rawIntegers.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
-
-  const numberPortion = precision > 0
-    ? `${integerWithSeparator}${decimalSeparator}${rawDecimals}`
-    : integerWithSeparator;
-
-  const symbol = currencySymbol || currencyCode;
-
-  let formatted = "";
-  switch (currencyPosition) {
-    case "right":
-      formatted = `${numberPortion}${symbol}`;
-      break;
-    case "left_space":
-      formatted = `${symbol} ${numberPortion}`;
-      break;
-    case "right_space":
-      formatted = `${numberPortion} ${symbol}`;
-      break;
-    case "left":
-    default:
-      formatted = `${symbol}${numberPortion}`;
-      break;
-  }
-
-  if (amount < 0) {
-    return `-${formatted}`;
-  }
-
-  return formatted;
+    return isNegative ? `-${formatted}` : formatted;
+  };
 };
 
+const FALLBACK_FORMATTER = createFormatter(FALLBACK_CURRENCY);
+
 const CurrencyContext = createContext<CurrencyContextValue>({
-  settings: defaultSettings,
-  formatCurrency: (amount: number) => formatAmount(amount, defaultSettings),
-  isLoading: false,
+  ...FALLBACK_CURRENCY,
+  format: FALLBACK_FORMATTER,
+  formatCurrency: FALLBACK_FORMATTER,
+  loading: true,
 });
 
-interface CurrencyProviderProps {
+type CurrencyProviderProps = {
   children: ReactNode;
-}
+};
 
 export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
   const { data, isLoading, isError, error } = useWooCommerceCurrency();
 
-  const settings = data ?? defaultSettings;
+  const currency = data ?? FALLBACK_CURRENCY;
+  const formatter = useMemo(() => createFormatter(currency), [currency]);
 
-  const formatCurrency = useMemo(() => {
-    return (amount: number) => formatAmount(amount, settings);
-  }, [settings]);
+  useEffect(() => {
+    setCurrencyFormatter(formatter);
+    return () => {
+      setCurrencyFormatter(FALLBACK_FORMATTER);
+    };
+  }, [formatter]);
 
-  const value = useMemo<CurrencyContextValue>(() => ({
-    settings,
-    formatCurrency,
-    isLoading,
-    error: isError ? error?.message ?? "Unable to load currency settings" : undefined,
-  }), [settings, formatCurrency, isLoading, isError, error?.message]);
+  const value = useMemo<CurrencyContextValue>(
+    () => ({
+      ...currency,
+      format: formatter,
+      formatCurrency: formatter,
+      loading: isLoading,
+      error: isError ? error?.message ?? "Unable to load currency settings." : undefined,
+    }),
+    [currency, formatter, isLoading, isError, error?.message],
+  );
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
 };

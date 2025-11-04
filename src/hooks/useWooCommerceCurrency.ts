@@ -2,21 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 
 export type CurrencyPosition = "left" | "right" | "left_space" | "right_space";
 
-export interface WooCommerceCurrencySettings {
-  currencyCode: string;
-  currencySymbol: string;
-  currencyPosition: CurrencyPosition;
-  thousandSeparator: string;
-  decimalSeparator: string;
+export interface WooCommerceCurrency {
+  code: string;
+  symbol: string;
+  position: CurrencyPosition;
   decimals: number;
 }
 
-const fallbackSettings: WooCommerceCurrencySettings = {
-  currencyCode: "USD",
-  currencySymbol: "$",
-  currencyPosition: "left",
-  thousandSeparator: ",",
-  decimalSeparator: ".",
+const FALLBACK: WooCommerceCurrency = {
+  code: "USD",
+  symbol: "$",
+  position: "left",
   decimals: 2,
 };
 
@@ -25,33 +21,48 @@ export const useWooCommerceCurrency = () => {
     queryKey: ["woocommerce-currency-settings"],
     queryFn: async ({ signal }) => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (!supabaseUrl) {
-        console.warn("Missing VITE_SUPABASE_URL env, falling back to default currency settings");
-        return fallbackSettings;
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.warn("Missing Supabase env vars, using fallback currency settings.");
+        return FALLBACK;
       }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/woocommerce-settings`, {
         headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${supabaseAnonKey}`,
         },
         signal,
       });
 
       if (!response.ok) {
-        console.warn("Failed to fetch WooCommerce currency settings, using defaults");
-        return fallbackSettings;
+        throw new Error(`Failed to fetch WooCommerce settings (${response.status})`);
       }
 
-      const data = (await response.json()) as Partial<WooCommerceCurrencySettings>;
+      const payload = await response.json();
+
+      const code = String(payload.currencyCode ?? payload.currency ?? FALLBACK.code).toUpperCase();
+      const symbol = String(payload.currencySymbol ?? payload.symbol ?? FALLBACK.symbol);
+      const rawPosition = String(payload.currencyPosition ?? payload.position ?? FALLBACK.position).toLowerCase();
+      const position: CurrencyPosition =
+        rawPosition === "left" ||
+        rawPosition === "left_space" ||
+        rawPosition === "right" ||
+        rawPosition === "right_space"
+          ? rawPosition
+          : FALLBACK.position;
+
+      const decimalsCandidate = Number(payload.decimals ?? payload.currencyDecimals ?? FALLBACK.decimals);
+      const decimals = Number.isFinite(decimalsCandidate) && decimalsCandidate >= 0 ? Math.floor(decimalsCandidate) : FALLBACK.decimals;
 
       return {
-        ...fallbackSettings,
-        ...data,
-      } satisfies WooCommerceCurrencySettings;
+        code,
+        symbol,
+        position,
+        decimals,
+      } satisfies WooCommerceCurrency;
     },
-    staleTime: 60 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 1,
   });
 };
