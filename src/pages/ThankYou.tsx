@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { CheckCircle2, Package, Mail, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const ThankYou = () => {
   const [showContent, setShowContent] = useState(false);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const orderNumber = params.get("orderNumber");
 
   useEffect(() => {
     // Trigger animation after mount
@@ -65,9 +68,9 @@ const ThankYou = () => {
                 <Mail className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold mb-1">Confirmation Email Sent</h3>
+                <h3 className="font-semibold mb-1">Confirmation Message Sent</h3>
                 <p className="text-sm text-muted-foreground">
-                  Check your email for order details and tracking information.
+                  Check your email/phone for order details and tracking information.
                 </p>
               </div>
             </div>
@@ -77,7 +80,7 @@ const ThankYou = () => {
           <div className="text-center mb-8">
             <p className="text-sm text-muted-foreground mb-2">Order Number</p>
             <p className="text-2xl font-bold font-mono text-primary">
-              #{Math.random().toString(36).substr(2, 9).toUpperCase()}
+              {orderNumber ? `#${orderNumber}` : "-"}
             </p>
           </div>
 

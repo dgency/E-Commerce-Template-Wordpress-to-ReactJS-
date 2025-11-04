@@ -40,31 +40,39 @@ const Checkout = () => {
     setLoading(true);
 
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
+    // Collect only required fields
+    const fullName = formData.get('fullName');
+    const phone = formData.get('phone');
+    const email = formData.get('email');
+    const fullAddress = formData.get('fullAddress');
+    const note = formData.get('note');
+
+    // WooCommerce requires at least a non-empty string for email, so fallback to a dummy if blank
+    const billing = {
+      first_name: fullName,
+      address_1: fullAddress,
+      email: email && String(email).trim().length > 0 ? email : "guest@noemail.com",
+      phone: phone,
+      note: note,
+    };
+    const shipping = {
+      first_name: fullName,
+      address_1: fullAddress,
+      note: note,
+    };
+
     const orderData = {
       customer_id: user?.id || 0,
-      billing: {
-        first_name: formData.get('name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        address_1: formData.get('fullAddress'),
-        note: formData.get('note'),
-      },
-      shipping: {
-        first_name: formData.get('name'),
-        address_1: formData.get('fullAddress'),
-        note: formData.get('note'),
-      },
+      billing,
+      shipping,
       line_items: cart.map(item => {
-        // Remove 'p' prefix if exists (from old static data)
         const cleanId = item.id.toString().replace(/^p/, '');
         const productId = parseInt(cleanId, 10);
-        
         if (isNaN(productId) || productId <= 0) {
           console.error('Invalid product ID:', item.id, 'cleaned:', cleanId);
           throw new Error(`Invalid product. Please clear your cart and add products again.`);
         }
-        
         return {
           product_id: productId,
           quantity: item.quantity,
@@ -93,9 +101,9 @@ const Checkout = () => {
 
       const result = await response.json();
       
-      toast.success(`Order #${result.orderNumber} placed successfully!`);
-      clearCart();
-      navigate("/thank-you");
+  toast.success(`Order #${result.orderNumber} placed successfully!`);
+  clearCart();
+  navigate(`/thank-you?orderNumber=${result.orderNumber}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to place order";
       toast.error(message);
@@ -113,15 +121,13 @@ const Checkout = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Checkout Form */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Contact Information */}
+              {/* Contact & Address Information */}
               <div className="bg-card rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold font-heading mb-4">
-                  Contact Information
-                </h2>
+                <h2 className="text-2xl font-bold font-heading mb-4">Contact & Address Information</h2>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Name *</Label>
-                    <Input id="name" name="name" required />
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input id="fullName" name="fullName" required />
                   </div>
                   <div>
                     <Label htmlFor="phone">Phone Number *</Label>
@@ -131,24 +137,9 @@ const Checkout = () => {
                     <Label htmlFor="email">Email (optional)</Label>
                     <Input id="email" name="email" type="email" defaultValue={user?.email || ''} />
                   </div>
-                </div>
-              </div>
-
-              {/* Address & Note */}
-              <div className="bg-card rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold font-heading mb-4">
-                  Address
-                </h2>
-                <div className="space-y-4">
                   <div>
                     <Label htmlFor="fullAddress">Full Address *</Label>
-                    <textarea
-                      id="fullAddress"
-                      name="fullAddress"
-                      required
-                      rows={3}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
+                    <textarea id="fullAddress" name="fullAddress" required rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                   </div>
                   <div>
                     <Label htmlFor="note">Note (optional)</Label>
@@ -159,12 +150,8 @@ const Checkout = () => {
 
               {/* Payment Information */}
               <div className="bg-card rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold font-heading mb-4">
-                  Payment Method
-                </h2>
-                <p className="text-muted-foreground">
-                  Cash on Delivery (COD) - Pay when you receive your order
-                </p>
+                <h2 className="text-2xl font-bold font-heading mb-4">Payment Method</h2>
+                <p className="text-muted-foreground">Cash on Delivery (COD) - Pay when you receive your order</p>
               </div>
             </div>
 
