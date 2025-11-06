@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useWooCommerceCategories } from "@/hooks/useWooCommerceCategories";
 import { useMediaQuery } from "@/hooks/use-mobile";
-import { X } from "lucide-react";
+//
 
 type FilterTerms = {
   brand: string[];

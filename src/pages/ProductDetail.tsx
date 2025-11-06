@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Star, ShoppingCart, Heart, Share2, Minus, Plus, ChevronRight } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { ShoppingCart, Minus, Plus, ChevronRight } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCart } from "@/hooks/useCart";
@@ -9,9 +9,7 @@ import { useWooCommerceProducts } from "@/hooks/useWooCommerceProducts";
 import { useWooCommerceCategories } from "@/hooks/useWooCommerceCategories";
 import ProductCard from "@/components/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+//
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -36,7 +34,7 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(images[0] || null);
   // embla api to sync thumbnails with main carousel
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [emblaApi, setEmblaApi] = useState<any>(null);
+  const [emblaApi, _setEmblaApi] = useState<any>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Variations (optional) - basic support if product.variations exists
@@ -75,6 +73,20 @@ const ProductDetail = () => {
     if (words.length <= 60) return product.description;
     return words.slice(0, 60).join(' ') + '...';
   }, [product]);
+
+  // Mobile excerpt (30 words max); show "See more" if truncated
+  const mobileExcerpt = useMemo(() => {
+    if (!product?.description) return { text: '', truncated: false } as { text: string; truncated: boolean };
+    const words = product.description.split(/\s+/).filter(Boolean);
+    const truncated = words.length > 30;
+    const text = truncated ? words.slice(0, 30).join(' ') + '...' : product.description;
+    return { text, truncated };
+  }, [product]);
+
+  const handleSeeMore = useCallback(() => {
+    const el = document.getElementById('product-description');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   // Derive a brand on the client as a fallback if API didn't include it yet
   const derivedBrand = useMemo(() => {
@@ -205,11 +217,12 @@ const ProductDetail = () => {
         </nav>
 
         {/* Product Details */}
-        <div className="grid lg:grid-cols-2 gap-12 mb-12">
+  <div className="grid md:grid-cols-2 gap-12 mb-12">
           {/* Left: Modern Main Image + Thumbnails */}
           <div className="flex flex-col items-center">
             <div className="w-full flex justify-center mb-6">
-              <div className="bg-white rounded-xl p-6 flex items-center justify-center relative" style={{ minHeight: 320, minWidth: 320 }}>
+              {/* Remove minWidth to prevent horizontal scroll on very small screens */}
+              <div className="bg-white rounded-xl p-6 flex items-center justify-center relative w-full" style={{ minHeight: 320 }}>
                 {/* Modern pill badges top left */}
                 <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
                   {product.discount && product.discount > 0 && (
@@ -225,13 +238,12 @@ const ProductDetail = () => {
               </div>
             </div>
             {images.length > 1 && (
-              <div className="flex gap-4 mt-2">
+              <div className="flex flex-wrap gap-3 mt-2">
                 {images.map((img, idx) => (
                   <button
                     key={img + idx}
                     onClick={() => { setSelectedImage(img); setSelectedIndex(idx); }}
-                    className={`bg-white border rounded-lg p-1 flex items-center justify-center transition-all duration-150 hover:border-primary focus:border-primary ${selectedIndex === idx ? 'border-primary ring-2 ring-primary' : 'border-muted'}`}
-                    style={{ width: 64, height: 64 }}
+                    className={`bg-white border rounded-lg p-1 flex items-center justify-center transition-all duration-150 hover:border-primary focus:border-primary ${selectedIndex === idx ? 'border-primary ring-2 ring-primary' : 'border-muted'} w-14 h-14 md:w-16 md:h-16`}
                   >
                     <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain" />
                   </button>
@@ -243,7 +255,7 @@ const ProductDetail = () => {
           {/* Right: Info */}
           <div>
 
-            <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">{product.name}</h1>
+            <h1 className="text-xl md:text-3xl font-bold leading-tight mb-4">{product.name}</h1>
             {/* Modern pill line for Category, SKU, Brand */}
             <div className="flex flex-wrap gap-2 mb-4">
               {category?.name && (
@@ -267,15 +279,25 @@ const ProductDetail = () => {
                 )}
               </div>
               {/* short description (max ~60 words) */}
+              {/* Mobile: 30-word excerpt with See more */}
+              {mobileExcerpt.text && (
+                <p className="text-muted-foreground mt-4 text-sm sm:hidden">
+                  {mobileExcerpt.text}
+                  {mobileExcerpt.truncated && (
+                    <button type="button" onClick={handleSeeMore} className="ml-2 text-primary underline text-sm">See more</button>
+                  )}
+                </p>
+              )}
+              {/* Tablet/Desktop: keep longer excerpt */}
               {shortDescription && (
-                <p className="text-muted-foreground mt-4">{shortDescription}</p>
+                <p className="text-muted-foreground mt-4 hidden sm:block">{shortDescription}</p>
               )}
             </div>
             {/* Variations selector if present */}
             {variations.length > 0 && (
               <div className="mt-6">
                 <label className="text-sm font-medium block mb-2">Options</label>
-                <div className="flex gap-2 flex-wrap">
+                <div className="inline-flex gap-2 flex-wrap">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {variations.map((v: any, idx: number) => (
                     <button key={v.id || idx} onClick={() => setSelectedVariationIndex(idx)} className={`px-3 py-2 rounded-md border ${selectedVariationIndex === idx ? 'bg-primary text-white' : 'bg-white'}`}>
@@ -285,31 +307,33 @@ const ProductDetail = () => {
                 </div>
               </div>
             )}
-            {/* Quantity + Actions */}
-            <div className="mt-8 flex items-center gap-4">
-              <div className="flex items-center border rounded-full">
+            {/* Quantity + Actions (stacked across all breakpoints) */}
+            <div className="mt-8 flex flex-col gap-4">
+              {/* Quantity on top; auto width inline */}
+              <div className="inline-flex items-center border rounded-full w-fit">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 hover:bg-muted transition-colors rounded-l-full"><Minus className="h-4 w-4" /></button>
-                <span className="w-16 text-center font-medium">{quantity}</span>
+                <span className="min-w-[2.25rem] text-center font-medium">{quantity}</span>
                 <button onClick={() => setQuantity(quantity + 1)} className="p-3 hover:bg-muted transition-colors rounded-r-full"><Plus className="h-4 w-4" /></button>
               </div>
-              <div className="flex-1 flex gap-3">
-                <Button onClick={handleAddToCart} disabled={!product.inStock} className="btn-gradient rounded-full w-full max-w-[180px]"> <ShoppingCart className="h-5 w-5 mr-2" /> Add to Cart</Button>
-                <Button onClick={handleBuyNow} variant="outline" className="rounded-full w-full max-w-[180px]">Buy Now</Button>
+              {/* Buttons below; keep side-by-side using 2-up grid on all sizes */}
+              <div className="w-full grid grid-cols-2 gap-3">
+                <Button onClick={handleAddToCart} disabled={!product.inStock} className="btn-gradient rounded-full w-full sm:text-base text-sm"> <ShoppingCart className="h-5 w-5 mr-2" /> Add to Cart</Button>
+                <Button onClick={handleBuyNow} variant="outline" className="rounded-full w-full sm:text-base text-sm">Buy Now</Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Description (single tab-style) */}
-        <section className="mt-8 border-t pt-8">
-          <h2 className="text-2xl font-semibold mb-4">Description</h2>
-          <div className="prose max-w-none text-muted-foreground">
+  {/* Description (single tab-style) */}
+  <section id="product-description" className="mt-8 border-t pt-8">
+  <h2 className="inline-block bg-muted px-3 py-1 rounded-full text-lg font-semibold md:text-2xl md:font-semibold mb-4">Description</h2>
+    <div className="prose prose-sm sm:prose-base max-w-none text-muted-foreground">
             {product.description}
           </div>
         </section>
         {/* Related Products */}
         <section className="mt-12">
-          <h2 className="text-3xl font-bold mb-6">Related Products</h2>
+          <h2 className="inline-block bg-muted px-3 py-1 rounded-full text-lg font-semibold md:text-2xl md:font-semibold mb-4">Related Products</h2>
           {relatedProducts && relatedProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {relatedProducts.map((p) => (

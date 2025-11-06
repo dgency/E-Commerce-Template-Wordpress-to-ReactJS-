@@ -53,12 +53,12 @@ const Shop = () => {
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-12 md:py-16">
       <div className="container mx-auto px-4">
         {/* Top heading container */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold font-heading mb-2">All Products</h1>
-          <p className="text-muted-foreground">Showing {sortedProducts.length} products</p>
+        <div className="mb-8 md:mb-10">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-heading mb-2">All Products</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Showing {sortedProducts.length} products</p>
         </div>
         {/* Main content: sidebar + products */}
         <div className="flex gap-8">

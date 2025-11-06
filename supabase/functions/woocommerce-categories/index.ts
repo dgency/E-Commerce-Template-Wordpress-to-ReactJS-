@@ -22,9 +22,9 @@ serve(async (req) => {
   }
 
   try {
-    const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
-    const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
-    const siteUrl = 'https://dgency.net';
+  const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
+  const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
+  const siteUrl = Deno.env.get('WORDPRESS_SITE_URL') ?? 'https://dgency.net';
 
     if (!consumerKey || !consumerSecret) {
       throw new Error('WooCommerce credentials not configured');

@@ -2,13 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 
 export type SiteAssets = {
   logoUrl: string | null;
-  faviconUrl: string;
+  faviconUrl?: string | null;
   siteUrl?: string;
-};
-
-const FALLBACK: SiteAssets = {
-  logoUrl: null,
-  faviconUrl: "/favicon.ico",
 };
 
 export const useWordPressSiteAssets = () => {
@@ -18,17 +13,17 @@ export const useWordPressSiteAssets = () => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       if (!supabaseUrl || !supabaseAnonKey) {
-        console.warn("Missing Supabase env vars, using fallback site assets.");
-        return FALLBACK;
+        console.warn("Missing Supabase env vars; skipping site assets fetch.");
+        return { logoUrl: null, faviconUrl: null } satisfies SiteAssets;
       }
       const res = await fetch(`${supabaseUrl}/functions/v1/wordpress-site-assets`, {
         headers: { Authorization: `Bearer ${supabaseAnonKey}` },
         signal,
       });
-      if (!res.ok) return FALLBACK;
+      if (!res.ok) return { logoUrl: null, faviconUrl: null } satisfies SiteAssets;
       const data = await res.json();
       const logoUrl = typeof data?.logoUrl === "string" ? data.logoUrl : null;
-      const faviconUrl = typeof data?.faviconUrl === "string" ? data.faviconUrl : FALLBACK.faviconUrl;
+      const faviconUrl = typeof data?.faviconUrl === "string" ? data.faviconUrl : null;
       return { logoUrl, faviconUrl, siteUrl: data?.siteUrl } satisfies SiteAssets;
     },
     staleTime: 60 * 60 * 1000,

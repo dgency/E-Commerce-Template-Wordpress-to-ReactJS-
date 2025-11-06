@@ -1,3 +1,4 @@
+/// <reference path="../types.d.ts" />
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -6,13 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, email, emailOrUsername, password, username, token } = await req.json();
+  const { action, email, emailOrUsername, password, username, token, userId, currentPassword, newPassword } = await req.json();
     const siteUrl = 'https://dgency.net';
 
     switch (action) {
@@ -33,13 +34,13 @@ serve(async (req) => {
         console.log('Login successful for:', data.user_email, 'Raw user_id:', data.user_id, 'Type:', typeof data.user_id);
 
         // WordPress JWT returns user_id as a string number
-        const userId = data.user_id?.toString() || data.data?.user?.id?.toString() || '0';
+  const loginUserId = data.user_id?.toString() || data.data?.user?.id?.toString() || '0';
 
         return new Response(
           JSON.stringify({
             token: data.token,
             user: {
-              id: userId,
+              id: loginUserId,
               email: data.user_email,
               displayName: data.user_display_name,
               nicename: data.user_nicename,
@@ -94,13 +95,13 @@ serve(async (req) => {
         console.log('Signup successful, user created with ID:', customer.id, 'WordPress user_id:', loginData.user_id);
 
         // WordPress JWT returns user_id as a string number
-        const userId = loginData.user_id?.toString() || loginData.data?.user?.id?.toString() || customer.id?.toString() || '0';
+  const signupUserId = loginData.user_id?.toString() || loginData.data?.user?.id?.toString() || customer.id?.toString() || '0';
 
         return new Response(
           JSON.stringify({
             token: loginData.token,
             user: {
-              id: userId,
+              id: signupUserId,
               email: customer.email,
               displayName: `${customer.first_name} ${customer.last_name}`.trim() || customer.username,
               nicename: customer.username,
@@ -158,6 +159,49 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify({ success: true, message: 'Password reset email sent' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'change-password': {
+        // Verify current credentials via JWT login
+        const loginRes = await fetch(`${siteUrl}/wp-json/jwt-auth/v1/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: emailOrUsername || email, password: currentPassword }),
+        });
+
+        if (!loginRes.ok) {
+          const err = await loginRes.json().catch(() => ({}));
+          throw new Error(err.message || 'Current password is incorrect');
+        }
+
+        const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
+        const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
+        if (!consumerKey || !consumerSecret) {
+          throw new Error('WooCommerce credentials not configured');
+        }
+
+        // Update password via WooCommerce Customers API
+        const uid = (userId ?? (await loginRes.json()).user_id)?.toString();
+        if (!uid) throw new Error('Missing user id');
+
+        const updateRes = await fetch(
+          `${siteUrl}/wp-json/wc/v3/customers/${uid}?consumer_key=${consumerKey}&consumer_secret=${consumerSecret}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: newPassword }),
+          }
+        );
+
+        if (!updateRes.ok) {
+          const err = await updateRes.json().catch(() => ({}));
+          throw new Error(err.message || 'Failed to update password');
+        }
+
+        return new Response(
+          JSON.stringify({ success: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

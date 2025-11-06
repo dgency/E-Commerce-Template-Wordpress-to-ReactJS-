@@ -11,7 +11,7 @@ const FloatingCart = () => {
   if (cartItemCount === 0) return null;
 
   return (
-    <div className="fixed bottom-40 right-4 md:bottom-24 md:right-8 z-40 animate-scale-in">
+    <div className="fixed bottom-40 right-4 md:bottom-40 md:right-4 lg:bottom-24 lg:right-8 z-40 animate-scale-in">
       <div className="relative">
         {/* Cart Button */}
         <button

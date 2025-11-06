@@ -1,9 +1,10 @@
-import { Star, ShoppingCart } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { useWishlist } from "@/hooks/useWishlist";
 
 interface ProductCardProps {
   id: string;
@@ -25,11 +26,11 @@ const ProductCard = ({
   originalPrice,
   discount,
   image,
-  rating = 0,
   inStock = true,
 }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { formatCurrency } = useCurrency();
+  const { toggle, isWished } = useWishlist();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -43,6 +44,13 @@ const ProductCard = ({
     
     addToCart({ id: cleanId, name, price, image, slug });
     toast.success(`${name} added to cart!`);
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const item = { id: id.toString(), name, slug, price, originalPrice, discount, image, inStock };
+    toggle(item);
+    toast.success(isWished(id.toString()) ? "Removed from wishlist" : "Added to wishlist");
   };
 
   return (
@@ -65,6 +73,19 @@ const ProductCard = ({
               -{discount}%
             </div>
           )}
+
+          {/* Wishlist Toggle */}
+          <button
+            onClick={handleToggleWishlist}
+            aria-label="Toggle wishlist"
+            className="absolute top-1.5 right-1.5 md:top-3 md:right-3 bg-white/90 hover:bg-white text-foreground rounded-full p-1.5 md:p-2 shadow-md"
+          >
+            {isWished(id.toString()) ? (
+              <Heart className="h-4 w-4 md:h-5 md:w-5 text-rose-500 fill-rose-500" />
+            ) : (
+              <Heart className="h-4 w-4 md:h-5 md:w-5" />
+            )}
+          </button>
           
           {/* Out of Stock Overlay */}
           {!inStock && (
@@ -82,24 +103,7 @@ const ProductCard = ({
           </h3>
         </Link>
 
-        {/* Rating */}
-        {rating > 0 && (
-          <div className="flex items-center gap-0.5 md:gap-1 mb-2 md:mb-3">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-2.5 w-2.5 md:h-3.5 md:w-3.5 ${
-                  i < Math.floor(rating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "fill-muted text-muted"
-                }`}
-              />
-            ))}
-            <span className="text-[10px] md:text-xs text-muted-foreground ml-0.5 md:ml-1 font-medium">
-              {rating.toFixed(1)}
-            </span>
-          </div>
-        )}
+        {/* Rating removed as per request */}
 
         {/* Price Section */}
         <div className="flex items-baseline gap-1.5 md:gap-2 mb-2.5 md:mb-4">

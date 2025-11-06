@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Package, Lock, Heart, Settings, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { useWooCommerceOrders } from "@/hooks/useWooCommerceOrders";
-import { useWooCommerceWishlist } from "@/hooks/useWooCommerceWishlist";
+// Switched to local wishlist context
+import { useWishlist } from "@/hooks/useWishlist";
+import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { gravatarUrl } from "@/lib/avatar";
@@ -18,10 +21,30 @@ import { gravatarUrl } from "@/lib/avatar";
 
 const Account = () => {
   const navigate = useNavigate();
-  const { user, logout, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const { user, logout, loading: authLoading, changePassword } = useAuth();
+  // Security tab state (declare before any early returns)
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changing, setChanging] = useState(false);
   const { data: orders, isLoading: ordersLoading } = useWooCommerceOrders();
   const { formatCurrency } = useCurrency();
-  const { data: wishlist, isLoading: wishlistLoading } = useWooCommerceWishlist();
+  const { items: wishlist, remove: removeWish, clear: clearWishlist } = useWishlist();
+  const { addToCart } = useCart();
+
+  // Tabs state to allow linking directly e.g., /account?tab=wishlist
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab") || "orders";
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("tab");
+    if (q && q !== activeTab) setActiveTab(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -53,6 +76,38 @@ const Account = () => {
   // Optional extra fields that might come from WordPress
   type WPUserExtra = { avatarUrl?: string; phone?: string; role?: string };
   const extra = (user as unknown as WPUserExtra) || {};
+
+  const onChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast.error("New password must be different from current password");
+      return;
+    }
+    try {
+      setChanging(true);
+      await changePassword(currentPassword, newPassword);
+      toast.success("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to change password";
+      toast.error(msg);
+    } finally {
+      setChanging(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -88,7 +143,7 @@ const Account = () => {
           </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="orders" className="space-y-6">
+  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
             <TabsTrigger value="orders" className="gap-2">
               <Package className="h-4 w-4" />
@@ -160,17 +215,19 @@ const Account = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="current-password">Current Password</Label>
-                  <Input id="current-password" type="password" />
+                  <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-password">New Password</Label>
-                  <Input id="new-password" type="password" />
+                  <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input id="confirm-password" type="password" />
+                  <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                 </div>
-                <Button>Update Password</Button>
+                <Button onClick={onChangePassword} disabled={changing}>
+                  {changing ? "Updating..." : "Update Password"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -179,21 +236,32 @@ const Account = () => {
           <TabsContent value="wishlist" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>My Wishlist</CardTitle>
-                <CardDescription>Items you've saved for later</CardDescription>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>My Wishlist</CardTitle>
+                    <CardDescription>Items you've saved for later</CardDescription>
+                  </div>
+                  {wishlist && wishlist.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={() => { clearWishlist(); toast.success("Wishlist cleared"); }}>Clear All</Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                {wishlistLoading ? (
-                  <Skeleton className="h-20 w-full" />
-                ) : wishlist && wishlist.length > 0 ? (
+                {wishlist && wishlist.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {wishlist.map((item) => (
                       <Card key={item.id} className="border shadow-sm">
-                        <CardContent className="flex flex-col items-center p-4">
+                        <CardContent className="flex flex-col items-center p-4 gap-2">
                           <img src={item.image} alt={item.name} className="h-24 w-24 object-cover rounded mb-2" />
-                          <div className="font-semibold mb-1">{item.name}</div>
-                          <div className="text-primary font-bold mb-1">${item.price}</div>
-                          <Button size="sm" variant="outline">View</Button>
+                          <div className="font-semibold text-center">{item.name}</div>
+                          <div className="text-primary font-bold">{formatCurrency(item.price)}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Button asChild size="sm" variant="outline">
+                              <a href={`/product/${item.slug}`}>View</a>
+                            </Button>
+                            <Button size="sm" onClick={() => { addToCart({ id: item.id.toString().replace(/^p/, ''), name: item.name, price: item.price, image: item.image, slug: item.slug }); toast.success("Added to cart"); }}>Add to Cart</Button>
+                            <Button size="sm" variant="destructive" onClick={() => { removeWish(item.id); toast.success("Removed from wishlist"); }}>Remove</Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ))}

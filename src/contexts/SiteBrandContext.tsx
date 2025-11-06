@@ -1,23 +1,12 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from "react";
-import { useWordPressSiteInfo } from "@/hooks/useWordPressSiteInfo";
+import { useWordPressSiteInfo, type WordPressSiteInfo } from "@/hooks/useWordPressSiteInfo";
 
-const SiteBrandContext = createContext<any>(null);
+const SiteBrandContext = createContext<WordPressSiteInfo | null>(null);
 
 export const SiteBrandProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const { data } = useWordPressSiteInfo();
-
-  // Dynamically update favicon
-  if (data?.faviconUrl) {
-    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
-    if (link) link.href = data.faviconUrl;
-    else {
-      const newLink = document.createElement("link");
-      newLink.rel = "icon";
-      newLink.href = data.faviconUrl;
-      document.head.appendChild(newLink);
-    }
-  }
-
+  // Favicon is handled by FaviconSetter; this provider just supplies brand data.
   return <SiteBrandContext.Provider value={data}>{children}</SiteBrandContext.Provider>;
 };
 

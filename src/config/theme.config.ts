@@ -15,7 +15,8 @@ export const themeConfig = {
   storeAddress: "123 Market St, Springfield, USA",
   
   // Visual Identity
-  logoUrl: "/logos/Dgency_Store.svg",
+  // Global logo: points to public/logo.svg by default
+  logoUrl: "/site-logo.svg",
   logoAlt: "Dgency Store Logo",
   
   // Notice Bar

@@ -55,7 +55,7 @@ const HeroSlider = () => {
   };
 
   return (
-    <div className="relative w-full h-[400px] md:h-[600px] overflow-hidden">
+    <div className="relative w-full h-[480px] sm:h-[520px] md:h-[640px] overflow-hidden">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
@@ -73,12 +73,12 @@ const HeroSlider = () => {
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
               <div className="max-w-2xl text-white animate-slide-up">
-                <h2 className="text-4xl md:text-6xl font-bold font-heading mb-4">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading mb-3 md:mb-4 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
                   {slide.title}
                 </h2>
-                <p className="text-xl md:text-2xl mb-8">{slide.subtitle}</p>
+                <p className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]">{slide.subtitle}</p>
                 <Link to={slide.link}>
-                  <Button size="lg" className="btn-gradient text-lg px-8 py-6">
+                  <Button size="lg" className="btn-gradient text-sm sm:text-base md:text-lg px-5 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6">
                     {slide.cta}
                   </Button>
                 </Link>
@@ -91,26 +91,28 @@ const HeroSlider = () => {
       {/* Navigation Arrows */}
       {themeConfig.hero.showArrows && (
         <>
+          {/* On mobile/tablet, keep arrows away from the text block by moving them near the bottom.
+              On md+ screens, place them vertically centered as usual. */}
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10"
+            className="hidden lg:block absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/40 border border-white/25 backdrop-blur-sm text-white p-3 rounded-full shadow-md transition-all z-10"
             aria-label="Previous slide"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-4 w-4 md:h-6 md:w-6" />
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10"
+            className="hidden lg:block absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/40 border border-white/25 backdrop-blur-sm text-white p-3 rounded-full shadow-md transition-all z-10"
             aria-label="Next slide"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-4 w-4 md:h-6 md:w-6" />
           </button>
         </>
       )}
 
       {/* Dots */}
       {themeConfig.hero.showDots && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
           {slides.map((_, index) => (
             <button
               key={index}

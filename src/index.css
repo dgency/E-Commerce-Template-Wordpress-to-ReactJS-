@@ -127,6 +127,17 @@
     font-family: var(--font-heading);
     @apply font-semibold;
   }
+
+  /* Global responsive scale-down for tablet and mobile
+     This reduces the root font-size so all rem-based text and spacing
+     become slightly smaller on smaller devices, keeping layout balanced. */
+  html { font-size: 16px; }
+  @media (max-width: 1024px) { /* tablet and below */
+    html { font-size: 15px; }
+  }
+  @media (max-width: 640px) { /* mobile */
+    html { font-size: 14px; }
+  }
 }
 
 @layer components {
@@ -180,6 +191,14 @@
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out;
   }
+
+  /* Gentle floating animations for auth illustration */
+  .animate-float {
+    animation: floatY 4s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: floatY 6s ease-in-out infinite;
+  }
   
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -206,6 +225,11 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
   }
   
   /* Text gradient */

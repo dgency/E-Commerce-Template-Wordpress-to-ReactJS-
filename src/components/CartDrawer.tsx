@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, X } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { prefetchCheckout, prefetchCart, prefetchShop } from "@/lib/prefetch";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -42,7 +43,7 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
                 Add some products to get started!
               </p>
               <SheetClose asChild>
-                <Link to="/shop">
+                <Link to="/shop" onMouseEnter={prefetchShop}>
                   <Button className="btn-gradient">
                     Continue Shopping
                   </Button>
@@ -136,14 +137,14 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
               {/* Action Buttons */}
               <div className="space-y-2">
                 <SheetClose asChild>
-                  <Link to="/checkout" className="block">
+                  <Link to="/checkout" className="block" onMouseEnter={prefetchCheckout}>
                     <Button size="lg" className="w-full btn-gradient">
                       Checkout
                     </Button>
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
-                  <Link to="/cart" className="block">
+                  <Link to="/cart" className="block" onMouseEnter={prefetchCart}>
                     <Button variant="outline" size="lg" className="w-full">
                       View Cart
                     </Button>

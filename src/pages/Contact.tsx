@@ -65,8 +65,8 @@ const Contact = () => {
     setErrors({});
 
     try {
-      // Validate form data
-      const validatedData = contactSchema.parse(formData);
+  // Validate form data
+  contactSchema.parse(formData);
       setIsSubmitting(true);
 
       // Simulate API call

@@ -8,13 +8,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import AutoplayPlugin from "embla-carousel-autoplay";
+import Autoplay from "embla-carousel-autoplay";
 import { useRef } from "react";
 
 const CategoryCarousel = () => {
   const { data: categories, isLoading } = useWooCommerceCategories();
   const plugin = useRef(
-    new AutoplayPlugin({ delay: 4000, stopOnInteraction: true })
+    Autoplay({ delay: 4000, stopOnInteraction: true })
   );
 
   const shouldAutoPlay = (categories?.length || 0) >= 5;
@@ -23,10 +23,10 @@ const CategoryCarousel = () => {
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
-          <h2 className="text-4xl font-bold font-heading mb-2">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold font-heading mb-2">
             Popular Departments
           </h2>
-          <p className="text-muted-foreground">Products From These Categories Often Buy</p>
+          <p className="text-muted-foreground text-sm md:text-base">Products From These Categories Often Buy</p>
         </div>
         
         {isLoading ? (
@@ -73,8 +73,8 @@ const CategoryCarousel = () => {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="hidden md:flex -left-4 bg-background/80 backdrop-blur-sm hover:bg-background/90" />
-            <CarouselNext className="hidden md:flex -right-4 bg-background/80 backdrop-blur-sm hover:bg-background/90" />
+            <CarouselPrevious className="flex left-2 md:-left-4 bg-background/80 backdrop-blur-sm hover:bg-background/90 h-7 w-7 md:h-8 md:w-8" />
+            <CarouselNext className="flex right-2 md:-right-4 bg-background/80 backdrop-blur-sm hover:bg-background/90 h-7 w-7 md:h-8 md:w-8" />
           </Carousel>
         )}
       </div>

@@ -7,7 +7,6 @@ import { Search, Package, Truck, CheckCircle, XCircle } from "lucide-react";
 
 const TrackOrder = () => {
   const [orderId, setOrderId] = useState("");
-  const [email, setEmail] = useState("");
   const [tracking, setTracking] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,16 +18,13 @@ const TrackOrder = () => {
     setTracking(null);
     // Normalize input: strip leading #, non-digits, and whitespace
     const cleanId = orderId.replace(/^#/, "").replace(/\D+/g, "").trim();
-    const cleanEmail = email.trim();
-    if (!cleanId && !cleanEmail) {
+    if (!cleanId) {
       setLoading(false);
-      setError("Please enter at least one field: order number or billing email.");
+      setError("Please enter your Order Number.");
       return;
     }
     // Build API URL for Supabase Edge Function
-    let apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/woocommerce-orders?`;
-    if (cleanId) apiUrl += `order_id=${cleanId}`;
-    if (cleanEmail) apiUrl += `${cleanId ? "&" : ""}email=${encodeURIComponent(cleanEmail)}`;
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/woocommerce-orders?order_id=${cleanId}`;
     try {
       const response = await fetch(apiUrl, {
         headers: {
@@ -39,17 +35,11 @@ const TrackOrder = () => {
         throw new Error('Order not found or API error.');
       }
       const order = await response.json();
-      // If email provided, validate billing email
-      if (email.trim() && order?.billing?.email && order.billing.email.toLowerCase() !== email.trim().toLowerCase()) {
-        setLoading(false);
-        setError("Order found, but email does not match billing email.");
-        return;
-      }
       setTracking(order);
       setLoading(false);
-    } catch (err) {
+    } catch {
       setLoading(false);
-      setError("Order not found. Please check your Order Number and email.");
+      setError("Order not found. Please check your Order Number.");
     }
   };
 
@@ -91,26 +81,16 @@ const TrackOrder = () => {
                     className="border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
                   />
                 </div>
-                <div className="flex flex-col w-full">
-                  <label htmlFor="email" className="text-sm font-medium mb-1">Billing Email</label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="Email used for order (optional)"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
-                  />
-                </div>
+                {/* Phone/email removed by request - only order number field remains */}
                 <Button type="submit" className="w-full py-3 text-lg font-semibold" disabled={loading}>
                   <Search className="h-5 w-5 mr-2" />
                   {loading ? "Tracking..." : "Track Order"}
                 </Button>
               </div>
-              <div className="text-xs text-muted-foreground mt-2">Enter either your order number or billing email to track your order. At least one field is required.</div>
+              <div className="text-xs text-muted-foreground mt-2">Enter your order number to track your order.</div>
             </form>
             <div className="mt-4 text-xs text-muted-foreground bg-muted/40 rounded-md p-3">
-              <span className="font-semibold">Tip:</span> Anyone can track orders using the order number (with or without #). For guest orders, enter the billing email. Registered users can leave email blank.
+              <span className="font-semibold">Tip:</span> You can include or omit the leading # (e.g., 123456 or #123456).
             </div>
             {error && (
               <div className="mt-6 flex items-center gap-2 text-red-500 bg-red-50 rounded-md p-3">
@@ -191,7 +171,7 @@ const TrackOrder = () => {
             <div className="flex flex-col items-center justify-center h-full min-h-[320px]">
               <Truck className="h-16 w-16 text-muted-foreground animate-bounce mb-4" />
               <p className="text-lg text-muted-foreground font-semibold mb-2">Ready to track your order?</p>
-              <p className="text-sm text-muted-foreground">Enter your order number or billing email and click <span className="font-bold text-primary">Track Order</span> to see your order status and details.</p>
+              <p className="text-sm text-muted-foreground">Enter your order number and click <span className="font-bold text-primary">Track Order</span> to see your order status and details.</p>
             </div>
           )}
         </div>

@@ -35,7 +35,7 @@ interface WooCommerceOrder {
 }
 
 export const useWooCommerceOrders = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
     queryKey: ['woocommerce-orders', user?.id],

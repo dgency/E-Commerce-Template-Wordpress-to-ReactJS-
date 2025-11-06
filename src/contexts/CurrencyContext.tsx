@@ -20,12 +20,40 @@ const FALLBACK_CURRENCY: WooCommerceCurrency = {
   decimals: 2,
 };
 
+// Decode basic HTML entities (numeric like &#2547; and common named like &nbsp;)
+const decodeHtmlEntities = (input?: string) => {
+  if (!input) return "";
+  let s = input;
+  // numeric entities: decimal and hex
+  s = s.replace(/&#(x)?([0-9a-fA-F]+);?/g, (_m, isHex: string | undefined, num: string) => {
+    const cp = parseInt(num, isHex ? 16 : 10);
+    if (Number.isNaN(cp)) return _m as unknown as string;
+    try {
+      return String.fromCodePoint(cp);
+    } catch {
+      return _m as unknown as string;
+    }
+  });
+  // a few common named entities
+  s = s
+    .replace(/&nbsp;/g, "\u00A0")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+  return s;
+};
+
 const createFormatter = ({ symbol, position, decimals, code }: WooCommerceCurrency) => {
   const numberFormatter = new Intl.NumberFormat(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-  const resolvedSymbol = symbol || code;
+  // Convert HTML entities to real characters and normalize whitespace
+  const resolvedSymbol = (decodeHtmlEntities(symbol) || code)
+    .replace(/\u00A0/g, " ")
+    .trim();
 
   return (amount: number) => {
     const isNegative = amount < 0;

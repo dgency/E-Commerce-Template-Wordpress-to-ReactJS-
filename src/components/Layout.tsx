@@ -1,4 +1,3 @@
-import NoticeBar from "./NoticeBar";
 import HeaderPrimary from "./HeaderPrimary";
 import HeaderSecondary from "./HeaderSecondary";
 import Footer from "./Footer";
@@ -7,21 +6,37 @@ import BottomNav from "./BottomNav";
 import FloatingCart from "./FloatingCart";
 import { CartDrawerProvider } from "@/contexts/CartDrawerContext";
 import FaviconSetter from "./FaviconSetter";
+import { useEffect } from "react";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  // Ensure global top padding equals header offset on devices where the header is fixed (mobile)
+  useEffect(() => {
+    const update = () => {
+      const header = document.querySelector('[data-header-primary]') as HTMLElement | null;
+      if (!header) return;
+      const style = window.getComputedStyle(header);
+      const isFixed = style.position === "fixed";
+      const offset = isFixed ? header.offsetHeight : 0;
+      document.documentElement.style.setProperty("--app-header-offset", `${offset}px`);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   return (
     <CartDrawerProvider>
       <div className="min-h-screen flex flex-col">
         <FaviconSetter />
-        <NoticeBar />
+  {/* Notice bar removed as requested */}
         <HeaderPrimary />
   <HeaderSecondary />
-  {/* Remove margin-top so content sits directly below category menu */}
-  <main className="flex-1 pb-20 md:pb-0 mt-0">{children}</main>
+  {/* Add top padding equal to header height on small screens to avoid overlap */}
+  <main className="flex-1 pb-20 md:pb-0" style={{ paddingTop: "var(--app-header-offset, 0px)" }}>{children}</main>
         <Footer />
         <WhatsAppFAB />
         <FloatingCart />

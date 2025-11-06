@@ -7,8 +7,8 @@ export interface WordPressSiteInfo {
   faviconUrl?: string | null;
 }
 
-const FALLBACK_LOGO = "/src/assets/logo.svg";
-const FALLBACK_FAVICON = "/src/assets/favicon.ico";
+// For full WordPress branding, don't force local fallbacks.
+// (Intentionally no local fallback assets.)
 
 export function useWordPressSiteInfo() {
   return useQuery<WordPressSiteInfo>({
@@ -21,13 +21,13 @@ export function useWordPressSiteInfo() {
       try {
         const res = await fetch(`${base}/wp-json`);
         info = await res.json();
-      } catch (e) {
+      } catch {
         // ignore
       }
       try {
         const settingsRes = await fetch(`${base}/wp-json/wp/v2/settings`);
         if (settingsRes.ok) settings = await settingsRes.json();
-      } catch (e) {
+      } catch {
         // ignore
       }
       let logoUrl: string | null = null;
@@ -40,7 +40,7 @@ export function useWordPressSiteInfo() {
             const logoJson = await logoRes.json();
             logoUrl = logoJson?.source_url ?? null;
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
       }
@@ -50,9 +50,7 @@ export function useWordPressSiteInfo() {
         : typeof info?.site_icon_url === "string"
         ? info.site_icon_url
         : null;
-      // Fallbacks
-      if (!logoUrl) logoUrl = FALLBACK_LOGO;
-      if (!faviconUrl) faviconUrl = FALLBACK_FAVICON;
+      // Keep nulls if WP doesn't provide assets; components should handle gracefully
       return {
         name: typeof settings?.title === "string" ? settings.title : typeof info?.name === "string" ? info.name : undefined,
         description: typeof settings?.description === "string" ? settings.description : typeof info?.description === "string" ? info.description : undefined,

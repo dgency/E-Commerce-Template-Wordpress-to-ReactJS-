@@ -11,7 +11,7 @@ export interface WooCommerceWishlistItem {
 }
 
 export const useWooCommerceWishlist = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
     queryKey: ['woocommerce-wishlist', user?.id],

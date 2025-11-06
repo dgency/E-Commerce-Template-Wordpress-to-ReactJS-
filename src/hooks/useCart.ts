@@ -18,14 +18,15 @@ export const useCart = () => {
     setCart(getCart());
 
     // Listen for cart updates
-    const handleCartUpdate = (event: CustomEvent<CartItem[]>) => {
-      setCart(event.detail);
+    const handleCartUpdate = (event: Event) => {
+      const custom = event as CustomEvent<CartItem[]>;
+      setCart(custom.detail);
     };
 
-    window.addEventListener('cart-updated' as any, handleCartUpdate);
+    window.addEventListener('cart-updated' as unknown as keyof WindowEventMap, handleCartUpdate as EventListener);
 
     return () => {
-      window.removeEventListener('cart-updated' as any, handleCartUpdate);
+      window.removeEventListener('cart-updated' as unknown as keyof WindowEventMap, handleCartUpdate as EventListener);
     };
   }, []);
 

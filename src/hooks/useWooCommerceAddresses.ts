@@ -19,7 +19,7 @@ export interface WooCommerceAddress {
 export type BillingAddressInput = Omit<WooCommerceAddress, 'id' | 'is_default'>;
 
 export const useWooCommerceAddresses = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
     queryKey: ['woocommerce-addresses', user?.id],
@@ -60,7 +60,7 @@ export async function addOrUpdateBillingAddress(userId: string, token: string, b
 }
 
 export const useUpdateWooCommerceBillingAddress = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({

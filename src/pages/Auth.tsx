@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShoppingCart, ShoppingBag, User, Package, Truck, CreditCard, Store } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -73,8 +73,11 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-card rounded-2xl shadow-2xl p-8 border border-border/50">
+    <div className="py-16 md:py-24 bg-background">
+      <div className="container mx-auto px-4">
+  <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto items-center">
+          {/* Left: Auth Card */}
+          <div className="bg-card rounded-2xl shadow-2xl p-6 sm:p-8 border border-border/50 flex flex-col justify-center w-full">
         {/* Back Button for Forgot Password */}
         {isForgotPassword && (
           <button
@@ -100,7 +103,7 @@ const Auth = () => {
             : isLogin 
             ? "Sign in to your account to continue" 
             : "Join us and start shopping today"}
-        </p>
+          </p>
 
         {/* Forgot Password Form */}
         {isForgotPassword ? (
@@ -229,6 +232,39 @@ const Auth = () => {
           <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
             Back to Home
           </Link>
+        </div>
+          </div>
+
+          {/* Right: Minimal animated illustration (desktop only, no background, no shadow) */}
+          <div className="hidden lg:flex items-center justify-center">
+            <div className="relative w-full max-w-md aspect-square">
+              {/* Central cart */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-36 w-36 rounded-full ring-2 ring-primary/30 flex items-center justify-center animate-float-slow">
+                  <ShoppingCart className="h-16 w-16 text-primary" />
+                </div>
+              </div>
+              {/* Floating items */}
+              <div className="absolute -top-2 left-6 h-20 w-20 rounded-full ring-2 ring-rose-400/30 flex items-center justify-center animate-float">
+                <ShoppingBag className="h-10 w-10 text-rose-500" />
+              </div>
+              <div className="absolute bottom-4 right-6 h-20 w-20 rounded-full ring-2 ring-sky-400/30 flex items-center justify-center animate-float [animation-delay:200ms]">
+                <User className="h-10 w-10 text-sky-500" />
+              </div>
+              <div className="absolute top-10 right-10 h-16 w-16 rounded-full ring-2 ring-violet-400/30 flex items-center justify-center animate-float [animation-delay:350ms]">
+                <CreditCard className="h-8 w-8 text-violet-500" />
+              </div>
+              <div className="absolute -bottom-2 left-10 h-16 w-16 rounded-full ring-2 ring-emerald-400/30 flex items-center justify-center animate-float [animation-delay:500ms]">
+                <Truck className="h-8 w-8 text-emerald-500" />
+              </div>
+              <div className="absolute top-1/2 -translate-y-1/2 -left-2 h-14 w-14 rounded-full ring-2 ring-amber-400/30 flex items-center justify-center animate-float [animation-delay:150ms]">
+                <Package className="h-7 w-7 text-amber-500" />
+              </div>
+              <div className="absolute top-40 right-0 h-12 w-12 rounded-full ring-2 ring-pink-400/30 flex items-center justify-center animate-float [animation-delay:600ms]">
+                <Store className="h-6 w-6 text-pink-500" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

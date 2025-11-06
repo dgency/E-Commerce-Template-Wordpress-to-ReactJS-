@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const siteUrl = "https://dgency.net";
+const siteUrl = Deno.env.get("WORDPRESS_SITE_URL") ?? "https://dgency.net";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

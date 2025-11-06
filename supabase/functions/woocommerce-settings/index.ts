@@ -36,7 +36,7 @@ const defaultSettings: CurrencySettings = {
   decimals: 2,
 };
 
-const siteUrl = "https://dgency.net";
+const siteUrl = Deno.env.get("WORDPRESS_SITE_URL") ?? "https://dgency.net";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

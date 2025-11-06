@@ -1,7 +1,7 @@
 // HeaderPrimary.tsx
-import { Search, User, ShoppingCart, Phone, LogOut } from "lucide-react";
+import { User, ShoppingCart, Phone, LogOut, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { themeConfig } from "@/config/theme.config";
 import { Button } from "./ui/button";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import CartDrawer from "./CartDrawer";
 import { useCartDrawer } from "@/contexts/CartDrawerContext";
 import { GlobalSearch } from "@/components/search/GlobalSearch"; // 👈 use the modern search
+import { prefetchAccount, prefetchAuth, prefetchTrackOrder } from "@/lib/prefetch";
 import { useSiteBrand } from "@/contexts/SiteBrandContext";
 
 const HeaderPrimary = () => {
@@ -43,20 +44,53 @@ const HeaderPrimary = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [accountDropdownOpen]);
 
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [topThreshold, setTopThreshold] = useState(0);
+  const [nearTop, setNearTop] = useState(true);
+
+  // Expose header height via CSS var for layout spacing on mobile
+  useEffect(() => {
+    const setHeaderOffset = () => {
+      const el = headerRef.current;
+      if (!el) return;
+      const style = window.getComputedStyle(el);
+      const isFixed = style.position === "fixed";
+      const offset = isFixed ? el.offsetHeight : 0;
+      document.documentElement.style.setProperty("--app-header-offset", `${offset}px`);
+      setTopThreshold(offset || 56); // use header height as hide/show threshold
+    };
+    setHeaderOffset();
+    window.addEventListener("resize", setHeaderOffset);
+    return () => window.removeEventListener("resize", setHeaderOffset);
+  }, []);
+
+  // Track if we are near the very top; if so, force header visible
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.pageYOffset || 0;
+      setNearTop(y <= Math.max(0, topThreshold - 1));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [topThreshold]);
+
   return (
     <div
+      ref={headerRef}
+      data-header-primary
       className={`border-b bg-background z-50 transition-transform duration-300 w-full
         ${isMobile ? "fixed top-0" : "lg:sticky lg:top-0 lg:z-50 lg:h-16"}
-        ${isMobile ? (scrollDirection === "down" ? "-translate-y-full" : "translate-y-0") : "translate-y-0"}`}
+        ${isMobile ? (nearTop ? "translate-y-0" : (scrollDirection === "down" ? "-translate-y-full" : "translate-y-0")) : "translate-y-0"}`}
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
-          {/* Logo */}
+          {/* Logo (WordPress branding preferred) */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             {brand.logoUrl ? (
               <img
                 src={brand.logoUrl}
-                alt={brand.name || "Site Logo"}
+                alt={brand.name || themeConfig.brandName || "Site Logo"}
                 className="h-10 w-auto object-contain"
               />
             ) : (
@@ -119,13 +153,19 @@ const HeaderPrimary = () => {
                 {/* Dropdown menu on click */}
                 {accountDropdownOpen && (
                   <div className="account-dropdown-menu absolute right-0 mt-2 min-w-[180px] flex flex-col bg-white border border-border rounded-lg shadow-lg py-2 animate-fade-in z-50">
-                    <Link to="/account" onClick={() => setAccountDropdownOpen(false)}>
+                    <Link to="/account" onClick={() => setAccountDropdownOpen(false)} onMouseEnter={prefetchAccount}>
                       <Button variant="ghost" size="sm" className="w-full justify-start gap-2 px-4 py-2 text-left hover:bg-accent hover:text-accent-foreground rounded-md transition-colors">
                         <User className="h-4 w-4 mr-2" />
                         <span className="font-medium">Profile</span>
                       </Button>
                     </Link>
-                    <Link to="/track-order" onClick={() => setAccountDropdownOpen(false)}>
+                    <Link to="/account?tab=wishlist" onClick={() => setAccountDropdownOpen(false)} onMouseEnter={prefetchAccount}>
+                      <Button variant="ghost" size="sm" className="w-full justify-start gap-2 px-4 py-2 text-left hover:bg-pink-100 hover:text-pink-700 rounded-md transition-colors">
+                        <Heart className="h-4 w-4 mr-2 text-pink-500" />
+                        <span className="font-medium">Wishlist</span>
+                      </Button>
+                    </Link>
+                    <Link to="/track-order" onClick={() => setAccountDropdownOpen(false)} onMouseEnter={prefetchTrackOrder}>
                       <Button variant="ghost" size="sm" className="w-full justify-start gap-2 px-4 py-2 text-left hover:bg-blue-100 hover:text-blue-700 rounded-md transition-colors">
                         <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3"/></svg>
                         <span className="font-medium">Track Order</span>
@@ -144,7 +184,7 @@ const HeaderPrimary = () => {
                 )}
               </div>
             ) : (
-              <Link to="/auth/login">
+              <Link to="/auth/login" onMouseEnter={prefetchAuth}>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline">Login</span>

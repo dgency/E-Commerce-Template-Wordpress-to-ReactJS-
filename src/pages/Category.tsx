@@ -31,7 +31,7 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-12 md:py-16">
       <div className="container mx-auto px-4">
         {/* Category Header */}
         <div className="mb-8">
@@ -46,8 +46,7 @@ const Category = () => {
             <span>/</span>
             <span>{category?.name || 'Loading...'}</span>
           </div>
-
-          <h1 className="text-4xl font-bold font-heading mb-2">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-heading mb-2">
             {category?.name || 'Loading...'}
           </h1>
           <p className="text-muted-foreground">
@@ -56,7 +55,7 @@ const Category = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {isLoading ? (
             Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-3">
