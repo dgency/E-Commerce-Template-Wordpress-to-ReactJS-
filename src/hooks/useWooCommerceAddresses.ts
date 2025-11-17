@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { functionsFetch } from '@/lib/http/supabaseFunctions';
 
 export interface WooCommerceAddress {
   id: string;
@@ -25,12 +26,7 @@ export const useWooCommerceAddresses = () => {
     queryKey: ['woocommerce-addresses', user?.id],
     queryFn: async () => {
         if (!user) throw new Error('User not authenticated');
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const response = await fetch(`${supabaseUrl}/functions/v1/woocommerce-addresses?customer_id=${user.id}`, {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-        });
+        const response = await functionsFetch(`/woocommerce-addresses?customer_id=${user.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch addresses');
       }
@@ -43,22 +39,6 @@ export const useWooCommerceAddresses = () => {
   });
 };
 
-export async function addOrUpdateBillingAddress(userId: string, token: string, billing: BillingAddressInput) {
-  const url = `https://dgency.net/wp-json/wc/v3/customers/${userId}`;
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ billing }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to add/update billing address');
-  }
-  return await response.json();
-}
-
 export const useUpdateWooCommerceBillingAddress = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -66,11 +46,9 @@ export const useUpdateWooCommerceBillingAddress = () => {
   return useMutation({
       mutationFn: async (billing: BillingAddressInput) => {
         if (!user) throw new Error('User not authenticated');
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const res = await fetch(`${supabaseUrl}/functions/v1/woocommerce-addresses`, {
+        const res = await functionsFetch(`/woocommerce-addresses`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ customer_id: user.id, billing }),

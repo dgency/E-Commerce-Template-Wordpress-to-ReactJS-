@@ -1,6 +1,7 @@
 /* eslint-env deno */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders, preflight, getSiteConfig, json, errorJson, normalizeImageUrl } from "../_shared/config.ts";
 
 // Minimal WooCommerce types used for transformation
 type WooImage = { src?: string };
@@ -24,20 +25,12 @@ type WooProduct = {
   meta_data?: WooMeta[];
 };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
-  const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
-  const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
-  const siteUrl = Deno.env.get('WORDPRESS_SITE_URL') ?? 'https://dgency.net';
+  const { consumerKey, consumerSecret, siteUrl } = getSiteConfig();
 
     if (!consumerKey || !consumerSecret) {
       throw new Error('WooCommerce credentials not configured');
@@ -142,6 +135,9 @@ serve(async (req: Request) => {
           }))
         : [];
 
+      const primaryImage = normalizeImageUrl(product.images?.[0]?.src) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop';
+      const imageList = (product.images?.map((img: WooImage) => normalizeImageUrl(img.src) ?? '') || []).filter(Boolean);
+
       return {
         id: product.id.toString(),
         name: product.name,
@@ -154,12 +150,12 @@ serve(async (req: Request) => {
         discount: product.sale_price
           ? Math.round(((parseFloat(String(product.regular_price ?? '0')) - parseFloat(String(product.sale_price))) / parseFloat(String(product.regular_price ?? '0'))) * 100)
           : 0,
-        image: product.images?.[0]?.src || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
+        image: primaryImage,
   rating: parseFloat(String(product.average_rating ?? '0')) || 0,
         inStock: product.stock_status === 'instock',
         description: product.short_description?.replace(/<[^>]*>/g, '') || product.description?.replace(/<[^>]*>/g, '') || '',
         fullDescription: product.description || '',
-        images: product.images?.map((img: WooImage) => img.src ?? '').filter(Boolean) || [],
+        images: imageList,
         // new optional field
         brand,
         // expose simplified attributes for client-side fallback
@@ -169,27 +165,10 @@ serve(async (req: Request) => {
 
     console.log(`Successfully fetched ${transformedProducts.length} products`);
 
-    return new Response(
-      JSON.stringify(transformedProducts),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return json(transformedProducts);
   } catch (error) {
     console.error('Error in woocommerce-products function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return errorJson(errorMessage, 500);
   }
 });

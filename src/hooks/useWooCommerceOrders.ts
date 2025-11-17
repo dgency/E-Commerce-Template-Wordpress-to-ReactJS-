@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { functionsFetch } from '@/lib/http/supabaseFunctions';
 import { useAuth } from '@/hooks/useAuth';
 
 interface WooCommerceAddress {
@@ -42,14 +43,8 @@ export const useWooCommerceOrders = () => {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const url = `${supabaseUrl}/functions/v1/woocommerce-orders?customer_id=${user.id}`;
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-      });
+      const url = `/woocommerce-orders?customer_id=${user.id}`;
+      const response = await functionsFetch(url);
 
       if (!response.ok) {
         throw new Error('Failed to fetch orders');

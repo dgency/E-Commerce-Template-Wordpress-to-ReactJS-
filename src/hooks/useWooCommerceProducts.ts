@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { functionsFetch } from '@/lib/http/supabaseFunctions';
 
 interface WooCommerceProduct {
   id: string;
@@ -44,16 +45,7 @@ export const useWooCommerceProducts = (options: UseWooCommerceProductsOptions = 
         url += `?${queryString}`;
       }
 
-      // Get the Supabase project URL
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const fullUrl = `${supabaseUrl}/functions/v1${url}`;
-
-      const response = await fetch(fullUrl, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        signal,
-      });
+      const response = await functionsFetch(url, { signal });
 
       if (!response.ok) {
         throw new Error('Failed to fetch products');

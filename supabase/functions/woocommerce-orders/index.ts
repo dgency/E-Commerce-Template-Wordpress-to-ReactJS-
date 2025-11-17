@@ -1,20 +1,13 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, preflight, getSiteConfig, json, errorJson, normalizeImageUrl } from "../_shared/config.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
-  const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
-  const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
-  const siteUrl = Deno.env.get('WORDPRESS_SITE_URL') ?? 'https://dgency.net';
+  const { consumerKey, consumerSecret, siteUrl } = getSiteConfig();
 
     if (!consumerKey || !consumerSecret) {
       throw new Error('WooCommerce credentials not configured');
@@ -51,10 +44,7 @@ serve(async (req) => {
         return digits.endsWith(short) && digits.length > 0;
       });
       if (!matched.length) {
-        return new Response(
-          JSON.stringify({ error: 'No orders found for provided phone' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-        );
+        return json({ error: 'No orders found for provided phone' }, { status: 404 });
       }
       const latest = matched[0];
       const transformOrder = (order: any) => ({
@@ -70,7 +60,7 @@ serve(async (req) => {
           quantity: item.quantity,
           price: parseFloat(item.price),
           total: parseFloat(item.total),
-          image: item.image?.src || '',
+          image: normalizeImageUrl(item.image?.src) || '',
         })) || [],
         billing: order.billing,
         shipping: order.shipping,
@@ -78,7 +68,7 @@ serve(async (req) => {
       });
       const payload = transformOrder(latest);
       console.log('Found order by phone:', payload?.id);
-      return new Response(JSON.stringify(payload), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return json(payload);
     } else {
       throw new Error('customer_id or order_id parameter required');
     }
@@ -107,7 +97,7 @@ serve(async (req) => {
         quantity: item.quantity,
         price: parseFloat(item.price),
         total: parseFloat(item.total),
-        image: item.image?.src || '',
+        image: normalizeImageUrl(item.image?.src) || '',
       })) || [],
       billing: order.billing,
       shipping: order.shipping,
@@ -120,27 +110,10 @@ serve(async (req) => {
 
     console.log(`Successfully fetched ${Array.isArray(transformedOrders) ? transformedOrders.length : 1} orders`);
 
-    return new Response(
-      JSON.stringify(transformedOrders),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return json(transformedOrders);
   } catch (error) {
     console.error('Error in woocommerce-orders function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return errorJson(errorMessage, 500);
   }
 });

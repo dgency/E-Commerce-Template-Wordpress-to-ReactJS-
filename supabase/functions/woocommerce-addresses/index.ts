@@ -1,22 +1,14 @@
 /* eslint-env deno */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const siteUrl = Deno.env.get("WORDPRESS_SITE_URL") ?? "https://dgency.net";
+import { corsHeaders, preflight, getSiteConfig, json } from "../_shared/config.ts";
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
-    const consumerKey = Deno.env.get("WOOCOMMERCE_CONSUMER_KEY");
-    const consumerSecret = Deno.env.get("WOOCOMMERCE_CONSUMER_SECRET");
+    const { siteUrl, consumerKey, consumerSecret } = getSiteConfig();
 
     if (!consumerKey || !consumerSecret) {
       return new Response(JSON.stringify({ error: "WooCommerce credentials not configured" }), {
@@ -46,18 +38,15 @@ serve(async (req: Request) => {
         });
       }
       const customer = await resp.json();
-      return new Response(JSON.stringify({ billing: customer.billing, shipping: customer.shipping }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ billing: customer.billing, shipping: customer.shipping });
     }
 
     if (req.method === "PUT" || req.method === "POST") {
       const body = await req.json();
       const id = String(body.customer_id ?? customerId ?? "").trim();
       if (!id) {
-        return new Response(JSON.stringify({ error: "customer_id is required" }), {
+        return json({ error: "customer_id is required" }, {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -65,9 +54,8 @@ serve(async (req: Request) => {
       if (body.billing) payload.billing = body.billing;
       if (body.shipping) payload.shipping = body.shipping;
       if (Object.keys(payload).length === 0) {
-        return new Response(JSON.stringify({ error: "billing or shipping required" }), {
+        return json({ error: "billing or shipping required" }, {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -86,20 +74,12 @@ serve(async (req: Request) => {
       }
 
       const updated = await resp.json();
-      return new Response(JSON.stringify({ billing: updated.billing, shipping: updated.shipping }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ billing: updated.billing, shipping: updated.shipping });
     }
 
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Method not allowed" }, { status: 405 });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: message }, { status: 500 });
   }
 });

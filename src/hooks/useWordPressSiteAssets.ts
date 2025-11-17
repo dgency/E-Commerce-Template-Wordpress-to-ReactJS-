@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { functionsFetch } from "@/lib/http/supabaseFunctions";
 
 export type SiteAssets = {
   logoUrl: string | null;
@@ -10,16 +11,11 @@ export const useWordPressSiteAssets = () => {
   return useQuery<SiteAssets>({
     queryKey: ["wp-site-assets"],
     queryFn: async ({ signal }) => {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      if (!supabaseUrl || !supabaseAnonKey) {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
         console.warn("Missing Supabase env vars; skipping site assets fetch.");
         return { logoUrl: null, faviconUrl: null } satisfies SiteAssets;
       }
-      const res = await fetch(`${supabaseUrl}/functions/v1/wordpress-site-assets`, {
-        headers: { Authorization: `Bearer ${supabaseAnonKey}` },
-        signal,
-      });
+      const res = await functionsFetch(`/wordpress-site-assets`, { signal });
       if (!res.ok) return { logoUrl: null, faviconUrl: null } satisfies SiteAssets;
       const data = await res.json();
       const logoUrl = typeof data?.logoUrl === "string" ? data.logoUrl : null;

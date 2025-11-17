@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { functionsFetch } from "@/lib/http/supabaseFunctions";
 
 export type CurrencyPosition = "left" | "right" | "left_space" | "right_space";
 
@@ -20,20 +21,12 @@ export const useWooCommerceCurrency = () => {
   return useQuery({
     queryKey: ["woocommerce-currency-settings"],
     queryFn: async ({ signal }) => {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
         console.warn("Missing Supabase env vars, using fallback currency settings.");
         return FALLBACK;
       }
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/woocommerce-settings`, {
-        headers: {
-          Authorization: `Bearer ${supabaseAnonKey}`,
-        },
-        signal,
-      });
+      const response = await functionsFetch(`/woocommerce-settings`, { signal });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch WooCommerce settings (${response.status})`);

@@ -1,20 +1,13 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, preflight, getSiteConfig, json, errorJson } from "../_shared/config.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
-  const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
-  const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
-  const siteUrl = Deno.env.get('WORDPRESS_SITE_URL') ?? 'https://dgency.net';
+  const { consumerKey, consumerSecret, siteUrl } = getSiteConfig();
 
     if (!consumerKey || !consumerSecret) {
       throw new Error('WooCommerce credentials not configured');
@@ -35,7 +28,7 @@ serve(async (req) => {
       };
     });
 
-    const orderPayload = {
+    const orderPayload: any = {
       payment_method: 'cod',
       payment_method_title: 'Cash on Delivery',
       set_paid: false,
@@ -44,6 +37,22 @@ serve(async (req) => {
       line_items: validatedLineItems,
       customer_id: parseInt(orderData.customer_id, 10) || 0,
     };
+
+    // Optionally include selected shipping zone in order meta for admin visibility
+    if (orderData.shipping_zone_id != null) {
+      orderPayload.meta_data = [
+        { key: 'selected_shipping_zone_id', value: String(orderData.shipping_zone_id) },
+      ];
+    }
+
+    // Include shipping lines if provided (e.g., flat rate or free shipping)
+    if (Array.isArray(orderData.shipping_lines) && orderData.shipping_lines.length > 0) {
+      orderPayload.shipping_lines = orderData.shipping_lines.map((s: any) => ({
+        method_id: String(s.method_id ?? ''),
+        method_title: String(s.method_title ?? 'Shipping'),
+        total: String(s.total ?? '0'),
+      }));
+    }
 
     console.log('Creating WooCommerce order:', JSON.stringify(orderPayload, null, 2));
 
@@ -67,33 +76,16 @@ serve(async (req) => {
 
     console.log('Order created successfully:', order.id);
 
-    return new Response(
-      JSON.stringify({
-        orderId: order.id,
-        orderNumber: order.number,
-        status: order.status,
-        total: order.total,
-        paymentUrl: order.payment_url || null,
-      }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return json({
+      orderId: order.id,
+      orderNumber: order.number,
+      status: order.status,
+      total: order.total,
+      paymentUrl: order.payment_url || null,
+    });
   } catch (error) {
     console.error('Error in woocommerce-checkout function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return errorJson(errorMessage, 500);
   }
 });

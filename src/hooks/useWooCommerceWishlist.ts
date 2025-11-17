@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { functionsFetch } from '@/lib/http/supabaseFunctions';
 
 export interface WooCommerceWishlistItem {
   id: string;
@@ -17,14 +18,8 @@ export const useWooCommerceWishlist = () => {
     queryKey: ['woocommerce-wishlist', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      // Replace with your WooCommerce REST API endpoint for wishlist
-      const url = `${supabaseUrl}/functions/v1/woocommerce-wishlist?customer_id=${user.id}`;
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-      });
+      const url = `/woocommerce-wishlist?customer_id=${user.id}`;
+      const response = await functionsFetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch wishlist');
       }

@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect, ReactNode } from 'react';
+import { functionsFetch, authHeaders } from '@/lib/http/supabaseFunctions';
 
 interface User {
   id: string;
@@ -41,13 +42,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (emailOrUsername: string, password: string) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const response = await fetch(`${supabaseUrl}/functions/v1/wordpress-auth`, {
+    const response = await functionsFetch(`/wordpress-auth`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ action: 'login', emailOrUsername, password }),
     });
 
@@ -65,13 +62,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signup = async (email: string, password: string, username?: string) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const response = await fetch(`${supabaseUrl}/functions/v1/wordpress-auth`, {
+    const response = await functionsFetch(`/wordpress-auth`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ action: 'signup', email, password, username }),
     });
 
@@ -96,13 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const forgotPassword = async (email: string) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const response = await fetch(`${supabaseUrl}/functions/v1/wordpress-auth`, {
+    const response = await functionsFetch(`/wordpress-auth`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ action: 'forgot-password', email }),
     });
 
@@ -114,13 +103,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
     if (!user) throw new Error('Not authenticated');
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const response = await fetch(`${supabaseUrl}/functions/v1/wordpress-auth`, {
+    const response = await functionsFetch(`/wordpress-auth`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         action: 'change-password',
         email: user.email,

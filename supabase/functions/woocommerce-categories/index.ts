@@ -1,6 +1,7 @@
 /* eslint-env deno */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders, preflight, getSiteConfig, json, errorJson, normalizeImageUrl } from "../_shared/config.ts";
 
 type WooCategory = {
   id: number | string;
@@ -11,20 +12,12 @@ type WooCategory = {
   count?: number;
 };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
-  const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
-  const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
-  const siteUrl = Deno.env.get('WORDPRESS_SITE_URL') ?? 'https://dgency.net';
+  const { consumerKey, consumerSecret, siteUrl } = getSiteConfig();
 
     if (!consumerKey || !consumerSecret) {
       throw new Error('WooCommerce credentials not configured');
@@ -56,34 +49,17 @@ serve(async (req) => {
         id: category.id.toString(),
         name: category.name ?? '',
         slug: category.slug ?? '',
-        image: (category.image?.src) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
+        image: normalizeImageUrl(category.image?.src) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
         description: category.description?.replace(/<[^>]*>/g, '') || '',
         count: category.count ?? 0,
       }));
 
     console.log(`Successfully fetched ${transformedCategories.length} categories`);
 
-    return new Response(
-      JSON.stringify(transformedCategories),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return json(transformedCategories);
   } catch (error) {
     console.error('Error in woocommerce-categories function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return errorJson(errorMessage, 500);
   }
 });

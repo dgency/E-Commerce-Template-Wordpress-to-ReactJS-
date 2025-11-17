@@ -7,6 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { functionsFetch, authHeaders } from "@/lib/http/supabaseFunctions";
+import ShippingSelector from "@/components/checkout/ShippingSelector";
+import type { ShippingMethod } from "@/hooks/useWooCommerceShippingMethods";
 
 const Checkout = () => {
   const { cart, cartTotal, clearCart } = useCart();
@@ -14,6 +17,11 @@ const Checkout = () => {
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<ShippingMethod | null>(null);
+  const [shippingCost, setShippingCost] = useState<number>(0);
+
+  // Methods are handled inside ShippingSelector and emitted via onChange
 
   if (cart.length === 0) {
     return (
@@ -37,16 +45,24 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedZoneId == null) {
+      toast.error("Please select a shipping zone.");
+      return;
+    }
+    if (!selectedMethod) {
+      toast.error("Shipping option not available for this zone.");
+      return;
+    }
     setLoading(true);
 
-    const formData = new FormData(e.target as HTMLFormElement);
+  const formData = new FormData(e.target as HTMLFormElement);
 
     // Collect only required fields
-    const fullName = formData.get('fullName');
-    const phone = formData.get('phone');
-    const email = formData.get('email');
-    const fullAddress = formData.get('fullAddress');
-    const note = formData.get('note');
+  const fullName = formData.get('fullName');
+  const phone = formData.get('phone');
+  const email = formData.get('email');
+  const fullAddress = formData.get('fullAddress');
+  const note = formData.get('note');
 
     // WooCommerce requires at least a non-empty string for email, so fallback to a dummy if blank
     const billing = {
@@ -59,6 +75,7 @@ const Checkout = () => {
     const shipping = {
       first_name: fullName,
       address_1: fullAddress,
+      phone: phone,
       note: note,
     };
 
@@ -66,6 +83,14 @@ const Checkout = () => {
       customer_id: user?.id || 0,
       billing,
       shipping,
+      shipping_zone_id: selectedZoneId,
+      shipping_lines: [
+        {
+          method_id: selectedMethod.method_id,
+          method_title: selectedMethod.title,
+          total: (shippingCost || 0).toFixed(2),
+        },
+      ],
       line_items: cart.map(item => {
         const cleanId = item.id.toString().replace(/^p/, '');
         const productId = parseInt(cleanId, 10);
@@ -84,13 +109,9 @@ const Checkout = () => {
     };
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/woocommerce-checkout`, {
+      const response = await functionsFetch(`/woocommerce-checkout`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(orderData),
       });
 
@@ -148,6 +169,17 @@ const Checkout = () => {
                 </div>
               </div>
 
+              {/* Ship to different address removed per request */}
+
+              {/* Shipping Zone Selection */}
+              <ShippingSelector
+                onChange={({ zoneId, method, cost }) => {
+                  setSelectedZoneId(zoneId);
+                  setSelectedMethod(method);
+                  setShippingCost(cost || 0);
+                }}
+              />
+
               {/* Payment Information */}
               <div className="bg-card rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-bold font-heading mb-4">Payment Method</h2>
@@ -198,13 +230,11 @@ const Checkout = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-semibold">Free</span>
+                    <span className="font-semibold">{shippingCost > 0 ? formatCurrency(shippingCost) : "Free"}</span>
                   </div>
                   <div className="flex justify-between text-lg border-t pt-3">
                     <span className="font-bold">Total</span>
-                    <span className="font-bold text-accent">
-                      {formatCurrency(cartTotal)}
-                    </span>
+                    <span className="font-bold text-accent">{formatCurrency(cartTotal + (shippingCost || 0))}</span>
                   </div>
                 </div>
 

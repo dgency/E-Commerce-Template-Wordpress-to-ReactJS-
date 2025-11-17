@@ -57,6 +57,7 @@ const HeaderPrimary = () => {
       const isFixed = style.position === "fixed";
       const offset = isFixed ? el.offsetHeight : 0;
       document.documentElement.style.setProperty("--app-header-offset", `${offset}px`);
+      document.documentElement.style.setProperty("--primary-header-height", `${el.offsetHeight}px`);
       setTopThreshold(offset || 56); // use header height as hide/show threshold
     };
     setHeaderOffset();
@@ -79,29 +80,35 @@ const HeaderPrimary = () => {
     <div
       ref={headerRef}
       data-header-primary
-      className={`border-b bg-background z-50 transition-transform duration-300 w-full
-        ${isMobile ? "fixed top-0" : "lg:sticky lg:top-0 lg:z-50 lg:h-16"}
+      className={`border-b bg-background z-50 transition-transform duration-300 w-full shadow-sm
+        ${isMobile ? "fixed top-0" : "sticky top-0"}
         ${isMobile ? (nearTop ? "translate-y-0" : (scrollDirection === "down" ? "-translate-y-full" : "translate-y-0")) : "translate-y-0"}`}
     >
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* Logo (WordPress branding preferred) */}
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            {brand.logoUrl ? (
-              <img
-                src={brand.logoUrl}
-                alt={brand.name || themeConfig.brandName || "Site Logo"}
-                className="h-10 w-auto object-contain"
-              />
-            ) : (
-              <h1 className="text-2xl font-bold font-heading text-gradient">
-                {brand.name || themeConfig.brandName}
-              </h1>
-            )}
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 lg:py-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
+          {/* Logo (always use local /images/logo.svg) */}
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
+            <img
+              src="/images/logo.svg"
+              alt={brand.name || themeConfig.brandName || "Site Logo"}
+              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto object-contain"
+              onError={(e) => {
+                // Fallback to text if logo fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent && !parent.querySelector('h1')) {
+                  const h1 = document.createElement('h1');
+                  h1.className = 'text-2xl font-bold font-heading text-gradient';
+                  h1.textContent = brand.name || themeConfig.brandName;
+                  parent.appendChild(h1);
+                }
+              }}
+            />
           </Link>
 
-          {/* Search (desktop) */}
-          <div className="flex-1 max-w-2xl hidden md:block">
+          {/* Search (desktop & tablet) */}
+          <div className="flex-1 max-w-2xl hidden md:block mx-4 lg:mx-6">
             <GlobalSearch
               className="w-full"
               placeholder="Search products, categories..."
@@ -109,46 +116,46 @@ const HeaderPrimary = () => {
           </div>
 
           {/* Actions: phone, cart, login/account (at end) */}
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Contact Phone - always first */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 shrink-0">
+            {/* Contact Phone - desktop only */}
             <a
               href={`tel:${themeConfig.contactPhone}`}
-              className="hidden lg:flex items-center gap-2 text-sm hover:text-accent transition-colors"
+              className="hidden xl:flex items-center gap-2 text-sm hover:text-accent transition-colors px-2"
             >
               <Phone className="h-4 w-4" />
               <span className="font-medium">{themeConfig.contactPhone}</span>
             </a>
 
-            {/* Cart - always middle */}
+            {/* Cart - responsive */}
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 relative"
+              className="gap-1.5 sm:gap-2 relative px-2 sm:px-3"
               onClick={() => setIsOpen(true)}
             >
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
               {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-accent text-accent-foreground text-[10px] sm:text-xs font-bold rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
                   {cartItemCount}
                 </span>
               )}
-              <span className="hidden md:inline">Cart</span>
+              <span className="hidden sm:inline text-sm">Cart</span>
             </Button>
 
-            {/* Login/Account - always last */}
+            {/* Login/Account - responsive */}
             {user ? (
               <div className="relative">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-2 flex items-center account-dropdown-trigger"
+                  className="gap-1.5 sm:gap-2 flex items-center account-dropdown-trigger px-2 sm:px-3"
                   onClick={() => setAccountDropdownOpen((open) => !open)}
                   aria-expanded={accountDropdownOpen}
                   aria-haspopup="menu"
                 >
-                  <User className="h-5 w-5" />
-                  <span className="hidden md:inline font-semibold">Account</span>
-                  <svg className={`ml-1 h-3 w-3 text-muted-foreground transition-transform ${accountDropdownOpen ? "rotate-180" : "rotate-0"}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline font-semibold text-sm">Account</span>
+                  <svg className={`hidden sm:block ml-1 h-3 w-3 text-muted-foreground transition-transform ${accountDropdownOpen ? "rotate-180" : "rotate-0"}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
                 </Button>
                 {/* Dropdown menu on click */}
                 {accountDropdownOpen && (
@@ -185,20 +192,20 @@ const HeaderPrimary = () => {
               </div>
             ) : (
               <Link to="/auth/login" onMouseEnter={prefetchAuth}>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-5 w-5" />
-                  <span className="hidden md:inline">Login</span>
+                <Button variant="ghost" size="sm" className="gap-1.5 sm:gap-2 px-2 sm:px-3">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline text-sm">Login</span>
                 </Button>
               </Link>
             )}
           </div>
         </div>
 
-        {/* Search (mobile) */}
-        <div className="mt-4 md:hidden">
+        {/* Search (mobile only) */}
+        <div className="mt-3 md:hidden">
           <GlobalSearch
             className="w-full"
-            placeholder="Search products, categories..."
+            placeholder="Search products..."
           />
         </div>
       </div>

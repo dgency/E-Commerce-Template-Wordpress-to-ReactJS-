@@ -1,20 +1,15 @@
 /// <reference path="../types.d.ts" />
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, preflight, getSiteConfig, json, errorJson } from "../_shared/config.ts";
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
   const { action, email, emailOrUsername, password, username, token, userId, currentPassword, newPassword } = await req.json();
-    const siteUrl = 'https://dgency.net';
+    const { siteUrl } = getSiteConfig();
 
     switch (action) {
       case 'login': {
@@ -36,18 +31,15 @@ serve(async (req: Request) => {
         // WordPress JWT returns user_id as a string number
   const loginUserId = data.user_id?.toString() || data.data?.user?.id?.toString() || '0';
 
-        return new Response(
-          JSON.stringify({
-            token: data.token,
-            user: {
-              id: loginUserId,
-              email: data.user_email,
-              displayName: data.user_display_name,
-              nicename: data.user_nicename,
-            },
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return json({
+          token: data.token,
+          user: {
+            id: loginUserId,
+            email: data.user_email,
+            displayName: data.user_display_name,
+            nicename: data.user_nicename,
+          },
+        });
       }
 
       case 'signup': {
@@ -97,18 +89,15 @@ serve(async (req: Request) => {
         // WordPress JWT returns user_id as a string number
   const signupUserId = loginData.user_id?.toString() || loginData.data?.user?.id?.toString() || customer.id?.toString() || '0';
 
-        return new Response(
-          JSON.stringify({
-            token: loginData.token,
-            user: {
-              id: signupUserId,
-              email: customer.email,
-              displayName: `${customer.first_name} ${customer.last_name}`.trim() || customer.username,
-              nicename: customer.username,
-            },
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return json({
+          token: loginData.token,
+          user: {
+            id: signupUserId,
+            email: customer.email,
+            displayName: `${customer.first_name} ${customer.last_name}`.trim() || customer.username,
+            nicename: customer.username,
+          },
+        });
       }
 
       case 'validate': {
@@ -127,10 +116,7 @@ serve(async (req: Request) => {
 
         const data = await response.json();
 
-        return new Response(
-          JSON.stringify({ valid: true, data }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return json({ valid: true, data });
       }
 
       case 'forgot-password': {
@@ -148,19 +134,13 @@ serve(async (req: Request) => {
           
           console.log('Password reset email would be sent to:', email);
           
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: 'If this email exists, a password reset link has been sent.' 
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return json({ 
+            success: true, 
+            message: 'If this email exists, a password reset link has been sent.' 
+          });
         }
 
-        return new Response(
-          JSON.stringify({ success: true, message: 'Password reset email sent' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return json({ success: true, message: 'Password reset email sent' });
       }
 
       case 'change-password': {
@@ -200,10 +180,7 @@ serve(async (req: Request) => {
           throw new Error(err.message || 'Failed to update password');
         }
 
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return json({ success: true });
       }
 
       default:
@@ -212,12 +189,6 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('Error in wordpress-auth function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return errorJson(errorMessage, 500);
   }
 });

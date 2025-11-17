@@ -224,16 +224,24 @@ const ProductDetail = () => {
               {/* Remove minWidth to prevent horizontal scroll on very small screens */}
               <div className="bg-white rounded-xl p-6 flex items-center justify-center relative w-full" style={{ minHeight: 320 }}>
                 {/* Modern pill badges top left */}
-                <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
-                  {product.discount && product.discount > 0 && (
-                    <span className="inline-block bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">-{product.discount}%</span>
-                  )}
-                  {product.inStock ? (
-                    <span className="inline-block bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">In Stock</span>
-                  ) : (
-                    <span className="inline-block bg-gray-400 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">Out of Stock</span>
-                  )}
-                </div>
+                {(Number(product.discount) > 0) || product.inStock !== undefined ? (
+                  <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
+                    {Number(product.discount) > 0 && (
+                      <span className="inline-block bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                        -{product.discount}%
+                      </span>
+                    )}
+                    {product.inStock ? (
+                      <span className="inline-block bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                        In Stock
+                      </span>
+                    ) : (
+                      <span className="inline-block bg-gray-400 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                        Out of Stock
+                      </span>
+                    )}
+                  </div>
+                ) : null}
                 <img src={selectedImage || images[0]} alt={product.name} className="max-h-[320px] max-w-full object-contain" />
               </div>
             </div>

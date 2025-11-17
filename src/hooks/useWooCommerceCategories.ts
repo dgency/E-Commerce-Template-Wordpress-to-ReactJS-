@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { functionsFetch } from '@/lib/http/supabaseFunctions';
 
 interface WooCommerceCategory {
   id: string;
@@ -20,20 +21,14 @@ export const useWooCommerceCategories = (options: UseWooCommerceCategoriesOption
     queryKey: ['woocommerce-categories', options.search, options.per_page],
     queryFn: async ({ signal }) => {
       // Get the Supabase project URL
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      let url = `${supabaseUrl}/functions/v1/woocommerce-categories`;
+          let url = "/woocommerce-categories";
       const params = new URLSearchParams();
       if (options.search) params.append('search', options.search);
       if (options.per_page) params.append('per_page', String(options.per_page));
       const qs = params.toString();
       if (qs) url += `?${qs}`;
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        signal,
-      });
+          const response = await functionsFetch(url, { signal });
 
       if (!response.ok) {
         throw new Error('Failed to fetch categories');

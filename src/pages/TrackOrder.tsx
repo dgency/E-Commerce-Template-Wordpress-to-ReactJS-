@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { functionsFetch } from "@/lib/http/supabaseFunctions";
 // import { useWooCommerceOrders } from "@/hooks/useWooCommerceOrders";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -23,14 +24,8 @@ const TrackOrder = () => {
       setError("Please enter your Order Number.");
       return;
     }
-    // Build API URL for Supabase Edge Function
-  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/woocommerce-orders?order_id=${cleanId}`;
     try {
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-      });
+      const response = await functionsFetch(`woocommerce-orders?order_id=${cleanId}`);
       if (!response.ok) {
         throw new Error('Order not found or API error.');
       }

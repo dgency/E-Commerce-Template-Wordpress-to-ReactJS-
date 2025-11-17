@@ -1,12 +1,9 @@
 import { useEffect } from "react";
-import { useWordPressSiteAssets } from "@/hooks/useWordPressSiteAssets";
 
 export const FaviconSetter = () => {
-  const { data } = useWordPressSiteAssets();
-
   useEffect(() => {
-    if (!data?.faviconUrl) return;
-    const href = data.faviconUrl;
+    // Always use local /images/favicon.svg
+    const href = "/images/favicon.svg";
     const rels = ["icon", "shortcut icon", "apple-touch-icon"];
     rels.forEach((rel) => {
       let link = document.querySelector<HTMLLinkElement>(`link[rel='${rel}']`);
@@ -17,7 +14,7 @@ export const FaviconSetter = () => {
       }
       link.href = href;
     });
-  }, [data?.faviconUrl]);
+  }, []);
 
   return null;
 };

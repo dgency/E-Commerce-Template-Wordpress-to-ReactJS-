@@ -68,7 +68,7 @@ const ProductCard = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
           {/* Discount Badge */}
-          {discount && discount > 0 && (
+          {Number(discount) > 0 && (
             <div className="absolute top-1.5 left-1.5 md:top-3 md:left-3 bg-accent text-accent-foreground text-[10px] md:text-xs font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-lg animate-scale-in">
               -{discount}%
             </div>

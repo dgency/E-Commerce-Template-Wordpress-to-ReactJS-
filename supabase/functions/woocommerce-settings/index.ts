@@ -1,6 +1,7 @@
 /* eslint-env deno */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders, preflight, getSiteConfig, json, errorJson } from "../_shared/config.ts";
 
 type WooSetting = {
   id?: string;
@@ -11,10 +12,7 @@ type CurrencyResponse = {
   symbol?: string;
 };
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// CORS headers provided by shared config
 
 type CurrencyPosition = "left" | "right" | "left_space" | "right_space";
 
@@ -36,16 +34,12 @@ const defaultSettings: CurrencySettings = {
   decimals: 2,
 };
 
-const siteUrl = Deno.env.get("WORDPRESS_SITE_URL") ?? "https://dgency.net";
-
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
-    const consumerKey = Deno.env.get("WOOCOMMERCE_CONSUMER_KEY");
-    const consumerSecret = Deno.env.get("WOOCOMMERCE_CONSUMER_SECRET");
+    const { siteUrl, consumerKey, consumerSecret } = getSiteConfig();
 
     if (!consumerKey || !consumerSecret) {
       throw new Error("WooCommerce credentials not configured");
@@ -160,12 +154,7 @@ serve(async (req: Request) => {
       decimals,
     };
 
-    return new Response(JSON.stringify(payload), {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
-    });
+    return json(payload);
   } catch (error) {
     console.error("Error in woocommerce-settings function:", error);
     const payload = {
@@ -173,12 +162,6 @@ serve(async (req: Request) => {
       ...defaultSettings,
     };
 
-    return new Response(JSON.stringify(payload), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
-    });
+    return json(payload, { status: 500 });
   }
 });
